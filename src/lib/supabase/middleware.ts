@@ -6,9 +6,7 @@ export async function updateSession(request: NextRequest) {
   const hasSupabaseEnv =
     process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const isAuthPage = request.nextUrl.pathname.startsWith("/login");
-  const isProtectedPage =
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/admin");
+  const isProtectedPage = request.nextUrl.pathname.startsWith("/admin");
 
   if (!hasSupabaseEnv) {
     const hasDevAdminSession = request.cookies.get("dev_admin_session")?.value === "true";
@@ -66,7 +64,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/admin";
     url.search = "";
     return NextResponse.redirect(url);
   }
