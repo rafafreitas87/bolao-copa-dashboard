@@ -1,0 +1,22 @@
+[
+  { "matchNumber": 1, "officialScoreA": 2, "officialScoreB": 0 },
+  { "matchNumber": 2, "officialScoreA": 2, "officialScoreB": 1 },
+  { "matchNumber": 3, "officialScoreA": 1, "officialScoreB": 1 },
+  { "matchNumber": 4, "officialScoreA": 4, "officialScoreB": 1 },
+  { "matchNumber": 5, "officialScoreA": 0, "officialScoreB": 2 },
+  { "matchNumber": 6, "officialScoreA": 1, "officialScoreB": 2 },
+  { "matchNumber": 7, "officialScoreA": 1, "officialScoreB": 1 },
+  { "matchNumber": 8, "officialScoreA": 0, "officialScoreB": 2 },
+  { "matchNumber": 9, "officialScoreA": 1, "officialScoreB": 0 },
+  { "matchNumber": 10, "officialScoreA": 7, "officialScoreB": 1 },
+  { "matchNumber": 11, "officialScoreA": 2, "officialScoreB": 2 },
+  { "matchNumber": 12, "officialScoreA": 5, "officialScoreB": 1 },
+  { "matchNumber": 13, "officialScoreA": 1, "officialScoreB": 1 },
+  { "matchNumber": 14, "officialScoreA": 0, "officialScoreB": 0 },
+  { "matchNumber": 15, "officialScoreA": 2, "officialScoreB": 2 },
+  { "matchNumber": 16, "officialScoreA": 1, "officialScoreB": 1 },
+  { "matchNumber": 17, "officialScoreA": 3, "officialScoreB": 1 },
+  { "matchNumber": 18, "officialScoreA": 1, "officialScoreB": 4 },
+  { "matchNumber": 19, "officialScoreA": 3, "officialScoreB": 0 },
+  { "matchNumber": 20, "officialScoreA": 3, "officialScoreB": 1 }
+]
