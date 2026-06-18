@@ -74,8 +74,8 @@ export function RaceStage({ days }: RaceStageProps) {
 
   const maxPoints = Math.max(currentDay.maxPoints, 1);
   const calendarProgress = Math.max(currentDay.calendarProgress, 4);
-  const laneHeight = 72;
-  const leaderLaneHeight = 86;
+  const laneHeight = 62;
+  const leaderLaneHeight = 70;
 
   return (
     <section className="mb-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -180,54 +180,50 @@ export function RaceStage({ days }: RaceStageProps) {
                     key={row.participantId}
                     className={
                       isLeader
-                        ? "absolute left-0 right-0 h-20 rounded-md border border-white/70 bg-white/30 transition-transform duration-700 ease-out"
-                        : "absolute left-0 right-0 h-16 rounded-md border border-white/70 bg-white/30 transition-transform duration-700 ease-out"
+                        ? "absolute left-0 right-0 h-16 rounded-md border border-white/70 bg-white/30 transition-transform duration-700 ease-out"
+                        : "absolute left-0 right-0 h-14 rounded-md border border-white/70 bg-white/30 transition-transform duration-700 ease-out"
                     }
                     style={{ transform: `translateY(${rowTop}px)` }}
                   >
                     <div className="absolute left-3 right-3 top-1/2 h-px bg-white/90" />
                     <div
-                      className="absolute bottom-2 left-3 top-2 rounded-md opacity-90 transition-[width] duration-700 ease-out"
+                      className="absolute left-3 top-1/2 h-4 -translate-y-1/2 rounded-full opacity-95 transition-[width] duration-700 ease-out"
                       style={{
                         width: `calc((100% - 1.5rem) * ${progress / 100})`,
-                        background: `linear-gradient(90deg, ${color}22, ${color}66)`,
+                        background: `linear-gradient(90deg, ${color}33, ${color})`,
                       }}
                     />
                     <div
-                      className={
-                        isLeader
-                          ? "absolute inset-x-3 top-1/2 h-14 -translate-y-1/2 transition-[width] duration-700 ease-out"
-                          : "absolute inset-x-3 top-1/2 h-11 -translate-y-1/2 transition-[width] duration-700 ease-out"
-                      }
+                      className="absolute inset-x-3 top-1/2 h-10 -translate-y-1/2 transition-[width] duration-700 ease-out"
                       style={{
                         width: `calc((100% - 1.5rem) * ${progress / 100})`,
-                        minWidth: isLeader
-                          ? "min(280px, calc(100% - 1.5rem))"
-                          : "min(240px, calc(100% - 1.5rem))",
+                        minWidth: "52px",
                       }}
                     >
+                      <div className="ml-auto flex items-center justify-end gap-2">
+                        <HorseMarker color={color} initials={getInitials(row.participantName)} large={isLeader} />
                         <div
                         className={
                           isLeader
-                            ? "ml-auto flex h-14 w-[min(280px,100%)] items-center gap-3 rounded-md border border-black/10 bg-white px-3 shadow-[0_16px_28px_rgba(15,23,42,0.22)]"
-                            : "ml-auto flex h-11 w-[min(240px,100%)] items-center gap-3 rounded-md border border-black/10 bg-white px-3 shadow-[0_12px_22px_rgba(15,23,42,0.16)]"
+                            ? "flex h-12 w-[min(220px,calc(100vw-6rem))] items-center gap-2 rounded-md border border-black/10 bg-white px-3 shadow-[0_14px_24px_rgba(15,23,42,0.20)]"
+                            : "flex h-10 w-[min(200px,calc(100vw-6rem))] items-center gap-2 rounded-md border border-black/10 bg-white px-3 shadow-[0_10px_18px_rgba(15,23,42,0.14)]"
                         }
                       >
-                        <HorseMarker color={color} initials={getInitials(row.participantName)} large={isLeader} />
                         <div className="min-w-0">
-                          <p className={isLeader ? "truncate text-base font-black" : "truncate text-sm font-bold"}>
+                          <p className={isLeader ? "truncate text-sm font-black" : "truncate text-xs font-bold"}>
                             <span className="mr-2 text-xs text-slate-500">{index + 1}.</span>
                             {row.participantName}
                           </p>
-                          <p className="truncate text-xs text-slate-500">
+                          <p className="truncate text-[11px] text-slate-500">
                             {row.exactScores} cravados - {row.correctOutcomes} finais
                           </p>
                         </div>
                         <div className="ml-auto text-right">
-                          <p className={isLeader ? "text-xl font-black" : "text-lg font-black"}>
+                          <p className={isLeader ? "text-lg font-black" : "text-base font-black"}>
                             {row.totalPoints}
                           </p>
                         </div>
+                      </div>
                       </div>
                     </div>
                   </div>
@@ -309,8 +305,8 @@ function HorseMarker({
     <div
       className={
         large
-          ? "relative flex size-9 shrink-0 items-center justify-center rounded-md text-white"
-          : "relative flex size-7 shrink-0 items-center justify-center rounded-md text-white"
+          ? "relative flex size-7 shrink-0 items-center justify-center rounded-full text-white ring-2 ring-white"
+          : "relative flex size-6 shrink-0 items-center justify-center rounded-full text-white ring-2 ring-white"
       }
       style={{ backgroundColor: color }}
       title={initials}
@@ -318,7 +314,7 @@ function HorseMarker({
       <svg
         viewBox="0 0 32 32"
         aria-hidden="true"
-        className={large ? "size-6" : "size-5"}
+        className={large ? "size-5" : "size-4"}
         fill="none"
       >
         <path
