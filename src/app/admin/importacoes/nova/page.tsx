@@ -20,6 +20,7 @@ export default async function NewImportPage({ searchParams }: NewImportPageProps
   const params = await searchParams;
   const participants = await getParticipants();
   const uploads = await getUploads(participants);
+  const selectedParticipant = participants.find((participant) => participant.id === params.participantId);
 
   return (
     <main className="min-h-screen bg-[#f7f7f2] px-4 py-8 text-slate-950">
@@ -51,7 +52,14 @@ export default async function NewImportPage({ searchParams }: NewImportPageProps
         ) : null}
 
         <section className="mb-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold">Novo upload</h2>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Novo upload</h2>
+            {selectedParticipant ? (
+              <span className="rounded-md bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-800">
+                Participante: {selectedParticipant.displayName}
+              </span>
+            ) : null}
+          </div>
           <form action={uploadPredictionFile} className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
             <label className="block">
               <span className="text-sm font-medium text-slate-700">Participante</span>

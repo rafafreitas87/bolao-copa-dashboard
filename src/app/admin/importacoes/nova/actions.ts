@@ -3,8 +3,8 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/session";
 import { createDevUpload } from "@/lib/dev-store";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
-import { createClient } from "@/lib/supabase/server";
 
 const allowedTypes = new Set(["pdf", "xls", "xlsx"]);
 
@@ -45,7 +45,7 @@ export async function uploadPredictionFile(formData: FormData) {
     redirect(`/admin/importacoes/${upload.id}/revisar`);
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const storagePath = `${participantId}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
   const { error: storageError } = await supabase.storage
     .from("bolao-uploads")
@@ -57,18 +57,22 @@ export async function uploadPredictionFile(formData: FormData) {
     redirect(`/admin/importacoes/nova?error=${encodeURIComponent(storageError.message)}`);
   }
 
-  const { error } = await supabase.from("uploads").insert({
-    participant_id: participantId,
-    uploaded_by_user_id: profile.id,
-    file_name: file.name,
-    file_type: extension.toUpperCase() as "PDF" | "XLS" | "XLSX",
-    storage_path: storagePath,
-    status: "UPLOADED",
-  });
+  const { data: upload, error } = await supabase
+    .from("uploads")
+    .insert({
+      participant_id: participantId,
+      uploaded_by_user_id: profile.id,
+      file_name: file.name,
+      file_type: extension.toUpperCase() as "PDF" | "XLS" | "XLSX",
+      storage_path: storagePath,
+      status: "UPLOADED",
+    })
+    .select("id")
+    .single();
 
   if (error) {
     redirect(`/admin/importacoes/nova?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/admin/importacoes/nova?uploaded=1");
+  redirect(`/admin/importacoes/${upload.id}/revisar`);
 }
