@@ -183,16 +183,12 @@ function getCalendarProgress(date: string) {
 
 async function getRankingInputs() {
   if (hasSupabaseEnv()) {
-    try {
-      return await Promise.all([
-        listSupabaseParticipants(),
-        listSupabasePredictions(),
-        listSupabaseResults(),
-        getGroupStageFixtures(),
-      ]);
-    } catch (error) {
-      console.error("Could not load Supabase dashboard data, falling back to seed data.", error);
-    }
+    return Promise.all([
+      listSupabaseParticipants(),
+      listSupabasePredictions(),
+      listSupabaseResults(),
+      getGroupStageFixtures(),
+    ]);
   }
 
   return Promise.all([

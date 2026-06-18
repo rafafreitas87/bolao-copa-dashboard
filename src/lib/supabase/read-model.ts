@@ -55,15 +55,18 @@ export async function listSupabaseResults(): Promise<DevResult[]> {
 
 export async function listSupabasePredictions(): Promise<DevPrediction[]> {
   const supabase = createAdminClient();
-  const fixtures = await getGroupStageFixtures();
-  const fixtureByMatchNumber = new Map(fixtures.map((fixture) => [fixture.matchNumber, fixture]));
-  const [{ data, error }, { data: matches, error: matchesError }] = await Promise.all([
+  const [
+    { data, error },
+    { data: matches, error: matchesError },
+    { data: teams, error: teamsError },
+  ] = await Promise.all([
     supabase
       .from("predictions")
       .select(
         "id, participant_id, match_id, predicted_score_a, predicted_score_b, source_file_name, source_upload_id, created_at",
       ),
-    supabase.from("matches").select("id, source_match_number"),
+    supabase.from("matches").select("id, source_match_number, team_a_id, team_b_id"),
+    supabase.from("teams").select("id, name_en"),
   ]);
 
   if (error) {
@@ -74,14 +77,18 @@ export async function listSupabasePredictions(): Promise<DevPrediction[]> {
     throw new Error(matchesError.message);
   }
 
-  const matchNumberById = new Map(matches.map((match) => [match.id, match.source_match_number]));
+  if (teamsError) {
+    throw new Error(teamsError.message);
+  }
+
+  const matchById = new Map(matches.map((match) => [match.id, match]));
+  const teamNameById = new Map(teams.map((team) => [team.id, team.name_en]));
 
   return data
     .map((prediction) => {
-      const matchNumber = matchNumberById.get(prediction.match_id);
-      const fixture = matchNumber ? fixtureByMatchNumber.get(matchNumber) : null;
+      const match = matchById.get(prediction.match_id);
 
-      if (!matchNumber || !fixture) {
+      if (!match?.source_match_number) {
         return null;
       }
 
@@ -89,9 +96,9 @@ export async function listSupabasePredictions(): Promise<DevPrediction[]> {
         id: prediction.id,
         participantId: prediction.participant_id,
         uploadId: prediction.source_upload_id ?? "SUPABASE",
-        matchNumber,
-        teamA: fixture.homeTeam,
-        teamB: fixture.awayTeam,
+        matchNumber: match.source_match_number,
+        teamA: teamNameById.get(match.team_a_id) ?? "Time A",
+        teamB: teamNameById.get(match.team_b_id) ?? "Time B",
         predictedScoreA: prediction.predicted_score_a,
         predictedScoreB: prediction.predicted_score_b,
         sourceFileName: prediction.source_file_name ?? "Supabase",

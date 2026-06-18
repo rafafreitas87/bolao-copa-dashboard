@@ -83,7 +83,7 @@ export function RaceStage({ days }: RaceStageProps) {
         <div>
           <h2 className="text-lg font-semibold">Corrida do ranking</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Evolucao acumulada por dia de jogo finalizado.
+            Evolucao acumulada por dia de jogo finalizado. Mostrando o top 8.
           </p>
         </div>
         <div className="flex items-center gap-2">
