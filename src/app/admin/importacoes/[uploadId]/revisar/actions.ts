@@ -8,6 +8,7 @@ import {
   saveDevPredictionsForUpload,
 } from "@/lib/dev-store";
 import { parseUploadPreview } from "@/lib/import/parse-upload";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 
@@ -16,17 +17,16 @@ export async function approveDetectedPredictions(formData: FormData) {
 
   const uploadId = String(formData.get("uploadId") ?? "");
 
-  if (hasSupabaseEnv()) {
-    redirect(`/admin/importacoes/${uploadId}/revisar?error=Confirmacao%20Supabase%20pendente`);
-  }
-
-  const upload = await getDevUpload(uploadId);
+  const upload = hasSupabaseEnv() ? await getSupabaseUpload(uploadId) : await getDevUpload(uploadId);
 
   if (!upload) {
     redirect("/admin/importacoes/nova?error=Upload%20nao%20encontrado");
   }
 
-  const preview = await parseUploadPreview(upload, await readDevUploadBytes(upload));
+  const bytes = hasSupabaseEnv()
+    ? await readSupabaseUploadBytes(upload.storagePath)
+    : await readDevUploadBytes(upload);
+  const preview = await parseUploadPreview(upload, bytes);
 
   if (
     (preview.kind !== "pdf" && preview.kind !== "excel") ||
@@ -35,11 +35,18 @@ export async function approveDetectedPredictions(formData: FormData) {
     redirect(`/admin/importacoes/${uploadId}/revisar?error=Nenhum%20palpite%20detectado`);
   }
 
-  await saveDevPredictionsForUpload({
-    upload,
-    participantId: upload.participantId,
-    predictions: preview.detectedPredictions,
-  });
+  if (hasSupabaseEnv()) {
+    await saveSupabasePredictionsForUpload({
+      upload,
+      predictions: preview.detectedPredictions,
+    });
+  } else {
+    await saveDevPredictionsForUpload({
+      upload,
+      participantId: upload.participantId,
+      predictions: preview.detectedPredictions,
+    });
+  }
 
   redirect(`/admin/importacoes/${uploadId}/revisar?approved=1`);
 }
@@ -49,11 +56,7 @@ export async function saveManualPredictions(formData: FormData) {
 
   const uploadId = String(formData.get("uploadId") ?? "");
 
-  if (hasSupabaseEnv()) {
-    redirect(`/admin/importacoes/${uploadId}/revisar?error=Digitacao%20manual%20Supabase%20pendente`);
-  }
-
-  const upload = await getDevUpload(uploadId);
+  const upload = hasSupabaseEnv() ? await getSupabaseUpload(uploadId) : await getDevUpload(uploadId);
 
   if (!upload) {
     redirect("/admin/importacoes/nova?error=Upload%20nao%20encontrado");
@@ -83,11 +86,111 @@ export async function saveManualPredictions(formData: FormData) {
     redirect(`/admin/importacoes/${uploadId}/revisar?error=Nenhum%20palpite%20digitado`);
   }
 
-  await saveDevPredictionsForUpload({
-    upload,
-    participantId: upload.participantId,
-    predictions,
-  });
+  if (hasSupabaseEnv()) {
+    await saveSupabasePredictionsForUpload({
+      upload,
+      predictions,
+    });
+  } else {
+    await saveDevPredictionsForUpload({
+      upload,
+      participantId: upload.participantId,
+      predictions,
+    });
+  }
 
   redirect(`/admin/importacoes/${uploadId}/revisar?approved=1&manual=${predictions.length}`);
+}
+
+async function getSupabaseUpload(uploadId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("uploads")
+    .select("id, participant_id, file_name, file_type, storage_path, uploaded_at, status")
+    .eq("id", uploadId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    participantId: data.participant_id,
+    fileName: data.file_name,
+    fileType: data.file_type,
+    storagePath: data.storage_path,
+    uploadedAt: data.uploaded_at,
+    status: "UPLOADED" as const,
+  };
+}
+
+async function readSupabaseUploadBytes(storagePath: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.storage.from("bolao-uploads").download(storagePath);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return Buffer.from(await data.arrayBuffer());
+}
+
+async function saveSupabasePredictionsForUpload(input: {
+  upload: {
+    id: string;
+    participantId: string;
+    fileName: string;
+  };
+  predictions: Array<{
+    matchNumber: number;
+    predictedScoreA: number;
+    predictedScoreB: number;
+  }>;
+}) {
+  const supabase = createAdminClient();
+  const { data: matches, error: matchesError } = await supabase
+    .from("matches")
+    .select("id, source_match_number")
+    .in(
+      "source_match_number",
+      input.predictions.map((prediction) => prediction.matchNumber),
+    );
+
+  if (matchesError) {
+    throw new Error(matchesError.message);
+  }
+
+  const matchIdByNumber = new Map(matches.map((match) => [match.source_match_number, match.id]));
+  const rows = input.predictions
+    .map((prediction) => {
+      const matchId = matchIdByNumber.get(prediction.matchNumber);
+
+      if (!matchId) {
+        return null;
+      }
+
+      return {
+        participant_id: input.upload.participantId,
+        match_id: matchId,
+        predicted_score_a: prediction.predictedScoreA,
+        predicted_score_b: prediction.predictedScoreB,
+        source_file_name: input.upload.fileName,
+        source_upload_id: input.upload.id,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+  const { error } = await supabase
+    .from("predictions")
+    .upsert(rows, { onConflict: "participant_id,match_id" });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await supabase
+    .from("uploads")
+    .update({ status: "CONFIRMED", confirmed_at: new Date().toISOString() })
+    .eq("id", input.upload.id);
 }

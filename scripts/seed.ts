@@ -187,12 +187,56 @@ async function main() {
 
   await seedTeams(groupStageFixtures);
   await seedMatches(groupStageFixtures);
+  await seedParticipants();
+  await seedOfficialResults();
 
   console.log("Seed complete.");
   console.log(`Admins: ${getAdminEmails().join(", ")}`);
   console.log(`Teams: ${Object.keys(teamsByEnglishName).length}`);
   console.log(`Group-stage matches: ${groupStageFixtures.length}`);
   console.log(`Fixtures source: ${payload.source || FIXTURES_URL}`);
+}
+
+async function seedParticipants() {
+  const rows = (await import("../data/seed-participants.json")).default.map(
+    (participant: { name: string; displayName: string; email?: string | null }) => ({
+      name: participant.name,
+      display_name: participant.displayName,
+      email: participant.email ?? null,
+      active: true,
+    }),
+  );
+
+  const { error } = await supabase.from("participants").upsert(rows, {
+    onConflict: "display_name",
+  });
+
+  if (error) {
+    throw new Error(`Could not seed participants: ${error.message}`);
+  }
+}
+
+async function seedOfficialResults() {
+  const rows = (await import("../data/official-results-through-2026-06-17.json")).default as Array<{
+    matchNumber: number;
+    officialScoreA: number;
+    officialScoreB: number;
+  }>;
+
+  for (const result of rows) {
+    const { error } = await supabase
+      .from("matches")
+      .update({
+        official_score_a: result.officialScoreA,
+        official_score_b: result.officialScoreB,
+        status: "FINISHED",
+      })
+      .eq("source_match_number", result.matchNumber);
+
+    if (error) {
+      throw new Error(`Could not seed result ${result.matchNumber}: ${error.message}`);
+    }
+  }
 }
 
 async function seedAdmins() {

@@ -76,6 +76,31 @@ export type Upload = {
   confirmed_by_user_id: string | null;
 };
 
+export type Prediction = {
+  id: string;
+  participant_id: string;
+  match_id: string;
+  predicted_score_a: number;
+  predicted_score_b: number;
+  source_file_name: string | null;
+  source_upload_id: string | null;
+  confidence: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PredictionScore = {
+  id: string;
+  prediction_id: string;
+  participant_id: string;
+  match_id: string;
+  points: number;
+  exact_score: boolean;
+  correct_outcome: boolean;
+  wrong: boolean;
+  calculated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -118,6 +143,20 @@ export type Database = {
             "participant_id" | "uploaded_by_user_id" | "file_name" | "file_type" | "storage_path"
           >;
         Update: Partial<Upload>;
+        Relationships: [];
+      };
+      predictions: {
+        Row: Prediction;
+        Insert: Partial<Prediction> &
+          Pick<Prediction, "participant_id" | "match_id" | "predicted_score_a" | "predicted_score_b">;
+        Update: Partial<Prediction>;
+        Relationships: [];
+      };
+      prediction_scores: {
+        Row: PredictionScore;
+        Insert: Partial<PredictionScore> &
+          Pick<PredictionScore, "prediction_id" | "participant_id" | "match_id">;
+        Update: Partial<PredictionScore>;
         Relationships: [];
       };
     };

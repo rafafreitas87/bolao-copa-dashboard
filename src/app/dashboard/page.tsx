@@ -7,6 +7,11 @@ import {
 } from "@/lib/dev-store";
 import { buildRanking } from "@/lib/scoring";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
+import {
+  listSupabaseParticipants,
+  listSupabasePredictions,
+  listSupabaseResults,
+} from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 import { RaceStage } from "./race-stage";
 
@@ -114,21 +119,19 @@ export default async function DashboardPage() {
 }
 
 async function getDashboardData() {
-  if (hasSupabaseEnv()) {
-    return {
-      ranking: [],
-      raceDays: [],
-      finishedMatches: 0,
-      participantsWithPredictions: 0,
-    };
-  }
-
-  const [participants, predictions, results, fixtures] = await Promise.all([
-    listDevParticipants(),
-    listDevPredictions(),
-    listDevResults(),
-    getGroupStageFixtures(),
-  ]);
+  const [participants, predictions, results, fixtures] = hasSupabaseEnv()
+    ? await Promise.all([
+        listSupabaseParticipants(),
+        listSupabasePredictions(),
+        listSupabaseResults(),
+        getGroupStageFixtures(),
+      ])
+    : await Promise.all([
+        listDevParticipants(),
+        listDevPredictions(),
+        listDevResults(),
+        getGroupStageFixtures(),
+      ]);
   const fixtureByMatchNumber = new Map(fixtures.map((fixture) => [fixture.matchNumber, fixture]));
   const ranking = buildRanking(participants, predictions, results).filter(
     (row) => row.totalPredictions > 0 || row.totalPoints > 0,

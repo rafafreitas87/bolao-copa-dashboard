@@ -7,7 +7,9 @@ import {
   readDevUploadBytes,
 } from "@/lib/dev-store";
 import { parseUploadPreview } from "@/lib/import/parse-upload";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { listSupabaseParticipants } from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 import { approveDetectedPredictions, saveManualPredictions } from "./actions";
 
@@ -28,22 +30,13 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
   const { uploadId } = await params;
   const search = await searchParams;
 
-  if (hasSupabaseEnv()) {
-    return (
-      <ReviewShell>
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-          Revisao de uploads no Supabase sera ligada junto com o parser persistido. No modo local ela
-          ja esta funcionando para validar o fluxo.
-        </div>
-      </ReviewShell>
-    );
-  }
-
-  const [upload, participants, savedPredictions] = await Promise.all([
-    getDevUpload(uploadId),
-    listDevParticipants(),
-    getDevPredictionsByUpload(uploadId),
-  ]);
+  const [upload, participants, savedPredictions] = hasSupabaseEnv()
+    ? await getSupabaseReviewData(uploadId)
+    : await Promise.all([
+        getDevUpload(uploadId),
+        listDevParticipants(),
+        getDevPredictionsByUpload(uploadId),
+      ]);
 
   if (!upload) {
     return (
@@ -56,9 +49,42 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
   }
 
   const participant = participants.find((row) => row.id === upload.participantId);
-  const bytes = await readDevUploadBytes(upload);
-  const preview = await parseUploadPreview(upload, bytes);
   const fixtures = await getGroupStageFixtures();
+  let preview: Awaited<ReturnType<typeof parseUploadPreview>> | null = null;
+  let previewError: string | null = null;
+
+  try {
+    const bytes = hasSupabaseEnv()
+      ? await readSupabaseUploadBytes(upload.storagePath)
+      : await readDevUploadBytes(upload);
+    preview = await parseUploadPreview(upload, bytes);
+  } catch (error) {
+    previewError =
+      error instanceof Error
+        ? error.message
+        : "Nao foi possivel abrir o arquivo enviado.";
+  }
+
+  if (!preview) {
+    return (
+      <ReviewShell>
+        <section className="mb-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="grid gap-4 md:grid-cols-4">
+            <Info label="Participante" value={participant?.displayName ?? "Nao encontrado"} />
+            <Info label="Arquivo" value={upload.fileName} />
+            <Info label="Tipo" value={upload.fileType} />
+            <Info label="Status" value={upload.status} />
+          </div>
+        </section>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+          Nao foi possivel carregar o arquivo para revisao neste ambiente. No deploy sem Supabase,
+          uploads ficam em armazenamento temporario da Vercel e podem sumir entre requisicoes.
+          Erro: {previewError ?? "arquivo indisponivel"}.
+        </div>
+      </ReviewShell>
+    );
+  }
+
   const detectedPredictions =
     preview.kind === "pdf" || preview.kind === "excel" ? preview.detectedPredictions : [];
   const isScannedPdf =
@@ -373,4 +399,48 @@ function Info({ label, value }: { label: string; value: string }) {
       <p className="mt-1 font-semibold">{value}</p>
     </div>
   );
+}
+
+async function getSupabaseReviewData(uploadId: string) {
+  const supabase = createAdminClient();
+  const [{ data: upload, error: uploadError }, participants] =
+    await Promise.all([
+      supabase
+        .from("uploads")
+        .select("id, participant_id, file_name, file_type, storage_path, uploaded_at, status")
+        .eq("id", uploadId)
+        .maybeSingle(),
+      listSupabaseParticipants(),
+    ]);
+
+  if (uploadError) {
+    throw new Error(uploadError.message);
+  }
+
+  return [
+    upload
+      ? {
+          id: upload.id,
+          participantId: upload.participant_id,
+          fileName: upload.file_name,
+          fileType: upload.file_type,
+          storagePath: upload.storage_path,
+          uploadedAt: upload.uploaded_at,
+          status: "UPLOADED" as const,
+        }
+      : null,
+    participants,
+    [],
+  ] as const;
+}
+
+async function readSupabaseUploadBytes(storagePath: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.storage.from("bolao-uploads").download(storagePath);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return Buffer.from(await data.arrayBuffer());
 }

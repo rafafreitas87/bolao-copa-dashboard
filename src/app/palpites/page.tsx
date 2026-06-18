@@ -5,15 +5,28 @@ import {
   listDevResults,
 } from "@/lib/dev-store";
 import { buildRanking } from "@/lib/scoring";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
+import {
+  listSupabaseParticipants,
+  listSupabasePredictions,
+  listSupabaseResults,
+} from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 
 export default async function PublicPredictionsPage() {
-  const [participants, predictions, results, fixtures] = await Promise.all([
-    listDevParticipants(),
-    listDevPredictions(),
-    listDevResults(),
-    getGroupStageFixtures(),
-  ]);
+  const [participants, predictions, results, fixtures] = hasSupabaseEnv()
+    ? await Promise.all([
+        listSupabaseParticipants(),
+        listSupabasePredictions(),
+        listSupabaseResults(),
+        getGroupStageFixtures(),
+      ])
+    : await Promise.all([
+        listDevParticipants(),
+        listDevPredictions(),
+        listDevResults(),
+        getGroupStageFixtures(),
+      ]);
 
   const totalMatches = fixtures.length;
   const rankingByParticipantId = new Map(
