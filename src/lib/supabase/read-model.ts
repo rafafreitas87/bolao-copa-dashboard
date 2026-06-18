@@ -126,6 +126,8 @@ export async function saveSupabasePredictionsForParticipant(input: {
   replaceParticipant?: boolean;
   predictions: Array<{
     matchNumber: number;
+    teamA?: string;
+    teamB?: string;
     predictedScoreA: number;
     predictedScoreB: number;
   }>;
@@ -152,32 +154,43 @@ export async function saveSupabasePredictionsForParticipant(input: {
     }
   }
 
-  const { data: matches, error: matchesError } = await supabase
-    .from("matches")
-    .select("id, source_match_number")
-    .in(
-      "source_match_number",
-      input.predictions.map((prediction) => prediction.matchNumber),
-    );
+  const [{ data: matches, error: matchesError }, { data: teams, error: teamsError }] =
+    await Promise.all([
+      supabase
+        .from("matches")
+        .select("id, source_match_number, team_a_id, team_b_id")
+        .not("source_match_number", "is", null),
+      supabase.from("teams").select("id, name, name_en, aliases"),
+    ]);
 
   if (matchesError) {
     throw new Error(matchesError.message);
   }
 
+  if (teamsError) {
+    throw new Error(teamsError.message);
+  }
+
   const matchIdByNumber = new Map(matches.map((match) => [match.source_match_number, match.id]));
+  const teamById = new Map(teams.map((team) => [team.id, team]));
   const rows = input.predictions
     .map((prediction) => {
-      const matchId = matchIdByNumber.get(prediction.matchNumber);
+      const resolved = resolvePredictionMatch({
+        prediction,
+        matches,
+        teamById,
+        matchIdByNumber,
+      });
 
-      if (!matchId) {
+      if (!resolved) {
         return null;
       }
 
       return {
         participant_id: input.participantId,
-        match_id: matchId,
-        predicted_score_a: prediction.predictedScoreA,
-        predicted_score_b: prediction.predictedScoreB,
+        match_id: resolved.matchId,
+        predicted_score_a: resolved.predictedScoreA,
+        predicted_score_b: resolved.predictedScoreB,
         source_file_name: input.sourceFileName ?? "Edicao manual",
         source_upload_id: input.uploadId ?? null,
       };
@@ -195,4 +208,115 @@ export async function saveSupabasePredictionsForParticipant(input: {
   if (error) {
     throw new Error(error.message);
   }
+}
+
+function resolvePredictionMatch(input: {
+  prediction: {
+    matchNumber: number;
+    teamA?: string;
+    teamB?: string;
+    predictedScoreA: number;
+    predictedScoreB: number;
+  };
+  matches: Array<{
+    id: string;
+    source_match_number: number | null;
+    team_a_id: string;
+    team_b_id: string;
+  }>;
+  teamById: Map<string, { name: string; name_en: string; aliases: string[] }>;
+  matchIdByNumber: Map<number | null, string>;
+}) {
+  const teamMatched = resolveMatchByTeams(input.prediction, input.matches, input.teamById);
+
+  if (teamMatched) {
+    return teamMatched;
+  }
+
+  const matchId = input.matchIdByNumber.get(input.prediction.matchNumber);
+
+  if (!matchId) {
+    return null;
+  }
+
+  return {
+    matchId,
+    predictedScoreA: input.prediction.predictedScoreA,
+    predictedScoreB: input.prediction.predictedScoreB,
+  };
+}
+
+function resolveMatchByTeams(
+  prediction: {
+    teamA?: string;
+    teamB?: string;
+    predictedScoreA: number;
+    predictedScoreB: number;
+  },
+  matches: Array<{
+    id: string;
+    team_a_id: string;
+    team_b_id: string;
+  }>,
+  teamById: Map<string, { name: string; name_en: string; aliases: string[] }>,
+) {
+  if (!prediction.teamA || !prediction.teamB) {
+    return null;
+  }
+
+  for (const match of matches) {
+    const home = teamById.get(match.team_a_id);
+    const away = teamById.get(match.team_b_id);
+
+    if (!home || !away) {
+      continue;
+    }
+
+    const sameSide =
+      teamNameMatches(prediction.teamA, home) && teamNameMatches(prediction.teamB, away);
+
+    if (sameSide) {
+      return {
+        matchId: match.id,
+        predictedScoreA: prediction.predictedScoreA,
+        predictedScoreB: prediction.predictedScoreB,
+      };
+    }
+
+    const reversedSide =
+      teamNameMatches(prediction.teamA, away) && teamNameMatches(prediction.teamB, home);
+
+    if (reversedSide) {
+      return {
+        matchId: match.id,
+        predictedScoreA: prediction.predictedScoreB,
+        predictedScoreB: prediction.predictedScoreA,
+      };
+    }
+  }
+
+  return null;
+}
+
+function teamNameMatches(value: string, team: { name: string; name_en: string; aliases: string[] }) {
+  const normalizedValue = normalizeTeamName(value);
+  const candidates = [team.name, team.name_en, ...team.aliases].map(normalizeTeamName);
+
+  return candidates.some(
+    (candidate) =>
+      candidate === normalizedValue ||
+      candidate.includes(normalizedValue) ||
+      normalizedValue.includes(candidate),
+  );
+}
+
+function normalizeTeamName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .replace(/\b(REPUBLICA|DEMOCRATICA|DO|DA|DE|E|THE)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
