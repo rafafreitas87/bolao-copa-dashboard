@@ -13,6 +13,8 @@ import {
 } from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 
+export const dynamic = "force-dynamic";
+
 type PublicParticipantPredictionsPageProps = {
   params: Promise<{
     participantId: string;
@@ -24,20 +26,9 @@ export default async function PublicParticipantPredictionsPage({
 }: PublicParticipantPredictionsPageProps) {
   const { participantId } = await params;
 
-  const [participants, allPredictions, results, fixtures] = hasSupabaseEnv()
-    ? await Promise.all([
-        listSupabaseParticipants(),
-        listSupabasePredictions(),
-        listSupabaseResults(),
-        getGroupStageFixtures(),
-      ])
-    : await Promise.all([
-        listDevParticipants(),
-        getDevPredictionsByParticipant(participantId),
-        listDevResults(),
-        getGroupStageFixtures(),
-      ]);
-  const predictions = hasSupabaseEnv()
+  const [participants, allPredictions, results, fixtures, usingSupabase] =
+    await getParticipantPredictionInputs(participantId);
+  const predictions = usingSupabase
     ? allPredictions.filter((prediction) => prediction.participantId === participantId)
     : allPredictions;
 
@@ -159,4 +150,30 @@ export default async function PublicParticipantPredictionsPage({
       </div>
     </main>
   );
+}
+
+async function getParticipantPredictionInputs(participantId: string) {
+  if (hasSupabaseEnv()) {
+    try {
+      const rows = await Promise.all([
+        listSupabaseParticipants(),
+        listSupabasePredictions(),
+        listSupabaseResults(),
+        getGroupStageFixtures(),
+      ]);
+
+      return [...rows, true] as const;
+    } catch (error) {
+      console.error("Could not load Supabase participant predictions, falling back.", error);
+    }
+  }
+
+  const rows = await Promise.all([
+    listDevParticipants(),
+    getDevPredictionsByParticipant(participantId),
+    listDevResults(),
+    getGroupStageFixtures(),
+  ]);
+
+  return [...rows, false] as const;
 }

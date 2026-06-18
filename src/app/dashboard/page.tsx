@@ -15,6 +15,8 @@ import {
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 import { RaceStage } from "./race-stage";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const dashboard = await getDashboardData();
   const leader = dashboard.ranking[0];
@@ -119,19 +121,7 @@ export default async function DashboardPage() {
 }
 
 async function getDashboardData() {
-  const [participants, predictions, results, fixtures] = hasSupabaseEnv()
-    ? await Promise.all([
-        listSupabaseParticipants(),
-        listSupabasePredictions(),
-        listSupabaseResults(),
-        getGroupStageFixtures(),
-      ])
-    : await Promise.all([
-        listDevParticipants(),
-        listDevPredictions(),
-        listDevResults(),
-        getGroupStageFixtures(),
-      ]);
+  const [participants, predictions, results, fixtures] = await getRankingInputs();
   const fixtureByMatchNumber = new Map(fixtures.map((fixture) => [fixture.matchNumber, fixture]));
   const ranking = buildRanking(participants, predictions, results).filter(
     (row) => row.totalPredictions > 0 || row.totalPoints > 0,
@@ -173,4 +163,26 @@ async function getDashboardData() {
     participantsWithPredictions: new Set(predictions.map((prediction) => prediction.participantId))
       .size,
   };
+}
+
+async function getRankingInputs() {
+  if (hasSupabaseEnv()) {
+    try {
+      return await Promise.all([
+        listSupabaseParticipants(),
+        listSupabasePredictions(),
+        listSupabaseResults(),
+        getGroupStageFixtures(),
+      ]);
+    } catch (error) {
+      console.error("Could not load Supabase dashboard data, falling back to seed data.", error);
+    }
+  }
+
+  return Promise.all([
+    listDevParticipants(),
+    listDevPredictions(),
+    listDevResults(),
+    getGroupStageFixtures(),
+  ]);
 }

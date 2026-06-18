@@ -13,20 +13,10 @@ import {
 } from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 
+export const dynamic = "force-dynamic";
+
 export default async function PublicPredictionsPage() {
-  const [participants, predictions, results, fixtures] = hasSupabaseEnv()
-    ? await Promise.all([
-        listSupabaseParticipants(),
-        listSupabasePredictions(),
-        listSupabaseResults(),
-        getGroupStageFixtures(),
-      ])
-    : await Promise.all([
-        listDevParticipants(),
-        listDevPredictions(),
-        listDevResults(),
-        getGroupStageFixtures(),
-      ]);
+  const [participants, predictions, results, fixtures] = await getPublicPredictionInputs();
 
   const totalMatches = fixtures.length;
   const rankingByParticipantId = new Map(
@@ -137,4 +127,26 @@ export default async function PublicPredictionsPage() {
       </div>
     </main>
   );
+}
+
+async function getPublicPredictionInputs() {
+  if (hasSupabaseEnv()) {
+    try {
+      return await Promise.all([
+        listSupabaseParticipants(),
+        listSupabasePredictions(),
+        listSupabaseResults(),
+        getGroupStageFixtures(),
+      ]);
+    } catch (error) {
+      console.error("Could not load Supabase predictions data, falling back to seed data.", error);
+    }
+  }
+
+  return Promise.all([
+    listDevParticipants(),
+    listDevPredictions(),
+    listDevResults(),
+    getGroupStageFixtures(),
+  ]);
 }
