@@ -48,9 +48,11 @@ const participantsPath = path.join(dataDir, "participants.json");
 const uploadsPath = path.join(dataDir, "uploads.json");
 const resultsPath = path.join(dataDir, "results.json");
 const predictionsPath = path.join(dataDir, "predictions.json");
+const seedParticipantsPath = path.join(process.cwd(), "data", "seed-participants.json");
+const seedResultsPath = path.join(process.cwd(), "data", "official-results-through-2026-06-17.json");
 
 export async function listDevParticipants() {
-  return readJson<DevParticipant[]>(participantsPath, []);
+  return readJson<DevParticipant[]>(participantsPath, await getSeedParticipants());
 }
 
 export async function createDevParticipant(input: {
@@ -177,7 +179,7 @@ export async function readDevUploadBytes(upload: DevUpload) {
 }
 
 export async function listDevResults() {
-  return readJson<DevResult[]>(resultsPath, []);
+  return readJson<DevResult[]>(resultsPath, await getSeedResults());
 }
 
 export async function listDevPredictions() {
@@ -317,4 +319,46 @@ function normalizeName(value: string) {
     .trim()
     .replace(/\s+/g, " ")
     .toUpperCase();
+}
+
+async function getSeedParticipants() {
+  const now = "2026-06-17T00:00:00.000Z";
+  const rows = await readJson<Array<{ name: string; displayName: string; email?: string | null }>>(
+    seedParticipantsPath,
+    [],
+  );
+
+  return rows.map<DevParticipant>((participant) => ({
+    id: `seed-${slugify(participant.displayName)}`,
+    name: participant.name,
+    displayName: participant.displayName,
+    email: participant.email ?? null,
+    active: true,
+    createdAt: now,
+    updatedAt: now,
+  }));
+}
+
+async function getSeedResults() {
+  const rows = await readJson<
+    Array<{ matchNumber: number; officialScoreA: number; officialScoreB: number }>
+  >(seedResultsPath, []);
+
+  return rows.map<DevResult>((result) => ({
+    matchNumber: result.matchNumber,
+    officialScoreA: result.officialScoreA,
+    officialScoreB: result.officialScoreB,
+    status: "FINISHED",
+    updatedAt: "2026-06-17T00:00:00.000Z",
+  }));
+}
+
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
