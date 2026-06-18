@@ -56,22 +56,14 @@ export async function listSupabaseResults(): Promise<DevResult[]> {
 export async function listSupabasePredictions(): Promise<DevPrediction[]> {
   const supabase = createAdminClient();
   const [
-    { data, error },
+    predictions,
     { data: matches, error: matchesError },
     { data: teams, error: teamsError },
   ] = await Promise.all([
-    supabase
-      .from("predictions")
-      .select(
-        "id, participant_id, match_id, predicted_score_a, predicted_score_b, source_file_name, source_upload_id, created_at",
-      ),
+    listAllPredictionRows(),
     supabase.from("matches").select("id, source_match_number, team_a_id, team_b_id"),
     supabase.from("teams").select("id, name_en"),
   ]);
-
-  if (error) {
-    throw new Error(error.message);
-  }
 
   if (matchesError) {
     throw new Error(matchesError.message);
@@ -84,7 +76,7 @@ export async function listSupabasePredictions(): Promise<DevPrediction[]> {
   const matchById = new Map(matches.map((match) => [match.id, match]));
   const teamNameById = new Map(teams.map((team) => [team.id, team.name_en]));
 
-  return data
+  return predictions
     .map((prediction) => {
       const match = matchById.get(prediction.match_id);
 
@@ -106,6 +98,45 @@ export async function listSupabasePredictions(): Promise<DevPrediction[]> {
       };
     })
     .filter((prediction): prediction is DevPrediction => Boolean(prediction));
+}
+
+async function listAllPredictionRows() {
+  const supabase = createAdminClient();
+  const pageSize = 1000;
+  let from = 0;
+  const rows: Array<{
+    id: string;
+    participant_id: string;
+    match_id: string;
+    predicted_score_a: number;
+    predicted_score_b: number;
+    source_file_name: string | null;
+    source_upload_id: string | null;
+    created_at: string;
+  }> = [];
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("predictions")
+      .select(
+        "id, participant_id, match_id, predicted_score_a, predicted_score_b, source_file_name, source_upload_id, created_at",
+      )
+      .order("participant_id", { ascending: true })
+      .order("match_id", { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    rows.push(...data);
+
+    if (data.length < pageSize) {
+      return rows;
+    }
+
+    from += pageSize;
+  }
 }
 
 export async function listSupabasePredictionsByParticipant(
