@@ -171,6 +171,7 @@ export function RaceStage({ days }: RaceStageProps) {
             >
               {rows.map((row, index) => {
                 const isLastPrize = index === rows.length - 1 && rows.length > 10;
+                const prizeLabel = index === 0 ? "OURO" : index === 1 ? "PRATA" : null;
                 const rawProgress = (row.totalPoints / maxPoints) * 100;
                 const progress = Math.min(
                   Math.max((rawProgress * calendarProgress) / 100, row.totalPoints > 0 ? 8 : 0),
@@ -185,8 +186,10 @@ export function RaceStage({ days }: RaceStageProps) {
                   <div
                     key={row.participantId}
                     className={
-                      isLeader
-                        ? "absolute left-0 right-0 h-16 rounded-md border border-white/70 bg-white/30 transition-transform duration-700 ease-out"
+                      prizeLabel === "OURO"
+                        ? "absolute left-0 right-0 h-16 rounded-md border border-yellow-300/90 bg-yellow-100/35 transition-transform duration-700 ease-out"
+                        : prizeLabel === "PRATA"
+                          ? "absolute left-0 right-0 h-14 rounded-md border border-slate-300 bg-slate-100/45 transition-transform duration-700 ease-out"
                         : isLastPrize
                           ? "absolute left-0 right-0 h-14 rounded-md border border-amber-300/80 bg-amber-100/35 transition-transform duration-700 ease-out"
                           : "absolute left-0 right-0 h-14 rounded-md border border-white/70 bg-white/30 transition-transform duration-700 ease-out"
@@ -219,6 +222,8 @@ export function RaceStage({ days }: RaceStageProps) {
                         className={
                           isLeader
                             ? "absolute top-1/2 flex h-12 w-[220px] -translate-y-1/2 items-center gap-2 rounded-md border border-black/10 bg-white px-3 shadow-[0_14px_24px_rgba(15,23,42,0.20)]"
+                            : isLastPrize
+                              ? "absolute top-1/2 flex h-12 w-[250px] -translate-y-1/2 items-center gap-2 rounded-md border border-amber-300 bg-white px-3 shadow-[0_10px_18px_rgba(15,23,42,0.14)]"
                             : "absolute top-1/2 flex h-10 w-[200px] -translate-y-1/2 items-center gap-2 rounded-md border border-black/10 bg-white px-3 shadow-[0_10px_18px_rgba(15,23,42,0.14)]"
                         }
                         style={labelOnLeft ? { right: "18px" } : { left: "calc(100% + 18px)" }}
@@ -236,7 +241,9 @@ export function RaceStage({ days }: RaceStageProps) {
                           </p>
                           <p className="truncate text-[11px] text-slate-500">
                             {isLastPrize
-                              ? "premio R$ 50"
+                              ? "TOMA AQUI OS 50 REAIS"
+                              : prizeLabel
+                                ? `${prizeLabel} - ${row.exactScores} cravados - ${row.correctOutcomes} finais`
                               : `${row.exactScores} cravados - ${row.correctOutcomes} finais`}
                           </p>
                         </div>
@@ -292,7 +299,13 @@ export function RaceStage({ days }: RaceStageProps) {
             {rows.slice(0, 10).map((row, index) => (
               <div
                 key={row.participantId}
-                className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2"
+                className={
+                  index === 0
+                    ? "flex items-center justify-between gap-3 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2"
+                    : index === 1
+                      ? "flex items-center justify-between gap-3 rounded-md border border-slate-300 bg-slate-100 px-3 py-2"
+                      : "flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2"
+                }
               >
                 <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
                   <HorseMarker
@@ -300,7 +313,8 @@ export function RaceStage({ days }: RaceStageProps) {
                     initials={getInitials(row.participantName)}
                   />
                   <span className="truncate">
-                    {index + 1}. {row.participantName}
+                    {index === 0 ? "OURO" : index === 1 ? "PRATA" : `${index + 1}.`}{" "}
+                    {row.participantName}
                   </span>
                 </span>
                 <span className="text-sm font-bold">{row.totalPoints}</span>
@@ -313,7 +327,7 @@ export function RaceStage({ days }: RaceStageProps) {
                     color={getParticipantColor(rows[10].participantId)}
                     initials={getInitials(rows[10].participantName)}
                   />
-                  <span className="truncate">Lanterna R$ 50: {rows[10].participantName}</span>
+                  <span className="truncate">TOMA AQUI OS 50 REAIS: {rows[10].participantName}</span>
                 </span>
                 <span className="text-sm font-bold">{rows[10].totalPoints}</span>
               </div>
