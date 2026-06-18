@@ -100,7 +100,18 @@ export function RaceStage({ days }: RaceStageProps) {
           </button>
           <button
             type="button"
-            onClick={() => setPlaying((value) => !value)}
+            onClick={() => {
+              if (playing) {
+                setPlaying(false);
+                return;
+              }
+
+              if (dayIndex >= latestDayIndex) {
+                setDayIndex(0);
+              }
+
+              setPlaying(true);
+            }}
             className="flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white hover:bg-slate-800"
           >
             {playing ? <Pause size={17} aria-hidden="true" /> : <Play size={17} aria-hidden="true" />}
@@ -195,11 +206,11 @@ export function RaceStage({ days }: RaceStageProps) {
                           : "min(240px, calc(100% - 1.5rem))",
                       }}
                     >
-                      <div
+                        <div
                         className={
                           isLeader
-                            ? "ml-auto flex h-14 w-[min(300px,100%)] items-center gap-3 rounded-md border border-black/10 bg-white px-3 shadow-[0_16px_28px_rgba(15,23,42,0.22)]"
-                            : "ml-auto flex h-11 w-[min(260px,100%)] items-center gap-3 rounded-md border border-black/10 bg-white px-3 shadow-[0_12px_22px_rgba(15,23,42,0.16)]"
+                            ? "ml-auto flex h-14 w-[min(280px,100%)] items-center gap-3 rounded-md border border-black/10 bg-white px-3 shadow-[0_16px_28px_rgba(15,23,42,0.22)]"
+                            : "ml-auto flex h-11 w-[min(240px,100%)] items-center gap-3 rounded-md border border-black/10 bg-white px-3 shadow-[0_12px_22px_rgba(15,23,42,0.16)]"
                         }
                       >
                         <HorseMarker color={color} initials={getInitials(row.participantName)} large={isLeader} />
@@ -298,8 +309,8 @@ function HorseMarker({
     <div
       className={
         large
-          ? "relative flex size-11 shrink-0 items-center justify-center rounded-md text-white"
-          : "relative flex size-8 shrink-0 items-center justify-center rounded-md text-white"
+          ? "relative flex size-9 shrink-0 items-center justify-center rounded-md text-white"
+          : "relative flex size-7 shrink-0 items-center justify-center rounded-md text-white"
       }
       style={{ backgroundColor: color }}
       title={initials}
@@ -307,7 +318,7 @@ function HorseMarker({
       <svg
         viewBox="0 0 32 32"
         aria-hidden="true"
-        className={large ? "size-8" : "size-6"}
+        className={large ? "size-6" : "size-5"}
         fill="none"
       >
         <path
