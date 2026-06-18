@@ -6,7 +6,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { getTeamFlagUrl } from "@/lib/team-flags";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
-import { saveOfficialResult } from "./actions";
+import { saveOfficialResults } from "./actions";
 
 type ResultsPageProps = {
   searchParams: Promise<{
@@ -61,7 +61,9 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
 
         {params.saved ? (
           <div className="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            Resultado salvo.
+            {Number(params.saved) > 1
+              ? `${params.saved} resultados salvos.`
+              : "Resultado salvo."}
           </div>
         ) : null}
         {params.error ? (
@@ -70,7 +72,20 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           </div>
         ) : null}
 
-        <div className="space-y-6">
+        <form action={saveOfficialResults} className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm">
+            <div>
+              <h2 className="text-lg font-semibold">Editar placares</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Preencha os jogos que terminaram e salve tudo de uma vez.
+              </p>
+            </div>
+            <button className="inline-flex h-10 items-center gap-2 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800">
+              <Save size={16} aria-hidden="true" />
+              Salvar todos
+            </button>
+          </div>
+
           {Object.entries(grouped).map(([date, rows]) => (
             <section key={date} className="rounded-lg border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-5 py-4">
@@ -85,13 +100,16 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
               </div>
               <div className="divide-y divide-slate-100">
                 {rows.map((match) => (
-                  <form
+                  <div
                     key={match.id}
-                    action={saveOfficialResult}
                     className="grid gap-3 px-5 py-4 md:grid-cols-[80px_1fr_150px_150px_auto]"
                   >
                     <input type="hidden" name="matchId" value={match.id} />
-                    <input type="hidden" name="matchNumber" value={match.matchNumber} />
+                    <input
+                      type="hidden"
+                      name={`matchNumber-${match.id}`}
+                      value={match.matchNumber}
+                    />
                     <div className="text-sm text-slate-500">
                       <div>Jogo {match.matchNumber}</div>
                       <div>{match.time}</div>
@@ -111,22 +129,20 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                     <label className="block">
                       <span className="text-xs font-medium text-slate-600">{match.teamA}</span>
                       <input
-                        name="officialScoreA"
+                        name={`officialScoreA-${match.id}`}
                         type="number"
                         min={0}
                         defaultValue={match.officialScoreA ?? ""}
-                        required
                         className="mt-1 h-10 w-full rounded-md border border-slate-300 px-3 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
                       />
                     </label>
                     <label className="block">
                       <span className="text-xs font-medium text-slate-600">{match.teamB}</span>
                       <input
-                        name="officialScoreB"
+                        name={`officialScoreB-${match.id}`}
                         type="number"
                         min={0}
                         defaultValue={match.officialScoreB ?? ""}
-                        required
                         className="mt-1 h-10 w-full rounded-md border border-slate-300 px-3 outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
                       />
                     </label>
@@ -140,20 +156,19 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                       >
                         {match.status === "FINISHED" ? "Finalizado" : "Pendente"}
                       </span>
-                      <button
-                        className="inline-flex h-10 items-center gap-2 rounded-md bg-emerald-700 px-3 text-sm font-medium text-white hover:bg-emerald-800"
-                        title="Salvar resultado"
-                      >
-                        <Save size={16} aria-hidden="true" />
-                        Salvar
-                      </button>
                     </div>
-                  </form>
+                  </div>
                 ))}
               </div>
             </section>
           ))}
-        </div>
+          <div className="flex justify-end">
+            <button className="inline-flex h-10 items-center gap-2 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800">
+              <Save size={16} aria-hidden="true" />
+              Salvar todos
+            </button>
+          </div>
+        </form>
       </div>
     </main>
   );
