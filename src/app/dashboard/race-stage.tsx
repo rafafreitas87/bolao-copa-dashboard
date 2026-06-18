@@ -174,6 +174,7 @@ export function RaceStage({ days }: RaceStageProps) {
                 const color = getParticipantColor(row.participantId);
                 const isLeader = index === 0;
                 const rowTop = index === 0 ? 0 : leaderLaneHeight + (index - 1) * laneHeight;
+                const labelOnLeft = progress > 58;
 
                 return (
                   <div
@@ -197,19 +198,29 @@ export function RaceStage({ days }: RaceStageProps) {
                       className="absolute inset-x-3 top-1/2 h-10 -translate-y-1/2 transition-[width] duration-700 ease-out"
                       style={{
                         width: `calc((100% - 1.5rem) * ${progress / 100})`,
-                        minWidth: "52px",
+                        minWidth: "34px",
                       }}
                     >
-                      <div className="ml-auto flex items-center justify-end gap-2">
-                        <HorseMarker color={color} initials={getInitials(row.participantName)} large={isLeader} />
-                        <div
+                      <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2">
+                        <HorseMarker
+                          color={color}
+                          initials={getInitials(row.participantName)}
+                          large={isLeader}
+                        />
+                      </div>
+                      <div
                         className={
                           isLeader
-                            ? "flex h-12 w-[min(220px,calc(100vw-6rem))] items-center gap-2 rounded-md border border-black/10 bg-white px-3 shadow-[0_14px_24px_rgba(15,23,42,0.20)]"
-                            : "flex h-10 w-[min(200px,calc(100vw-6rem))] items-center gap-2 rounded-md border border-black/10 bg-white px-3 shadow-[0_10px_18px_rgba(15,23,42,0.14)]"
+                            ? "absolute top-1/2 flex h-12 w-[220px] -translate-y-1/2 items-center gap-2 rounded-md border border-black/10 bg-white px-3 shadow-[0_14px_24px_rgba(15,23,42,0.20)]"
+                            : "absolute top-1/2 flex h-10 w-[200px] -translate-y-1/2 items-center gap-2 rounded-md border border-black/10 bg-white px-3 shadow-[0_10px_18px_rgba(15,23,42,0.14)]"
                         }
+                        style={labelOnLeft ? { right: "18px" } : { left: "calc(100% + 18px)" }}
                       >
-                        <div className="min-w-0">
+                        <div
+                          className="h-4 w-1 shrink-0 rounded-full"
+                          style={{ backgroundColor: color }}
+                        />
+                        <div className="min-w-0 flex-1">
                           <p className={isLeader ? "truncate text-sm font-black" : "truncate text-xs font-bold"}>
                             <span className="mr-2 text-xs text-slate-500">{index + 1}.</span>
                             {row.participantName}
@@ -223,7 +234,6 @@ export function RaceStage({ days }: RaceStageProps) {
                             {row.totalPoints}
                           </p>
                         </div>
-                      </div>
                       </div>
                     </div>
                   </div>
