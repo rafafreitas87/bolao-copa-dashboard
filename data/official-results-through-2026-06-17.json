@@ -18,5 +18,9 @@
   { "matchNumber": 17, "officialScoreA": 3, "officialScoreB": 1 },
   { "matchNumber": 18, "officialScoreA": 1, "officialScoreB": 4 },
   { "matchNumber": 19, "officialScoreA": 3, "officialScoreB": 0 },
-  { "matchNumber": 20, "officialScoreA": 3, "officialScoreB": 1 }
+  { "matchNumber": 20, "officialScoreA": 3, "officialScoreB": 1 },
+  { "matchNumber": 21, "officialScoreA": 1, "officialScoreB": 0 },
+  { "matchNumber": 22, "officialScoreA": 4, "officialScoreB": 2 },
+  { "matchNumber": 23, "officialScoreA": 1, "officialScoreB": 1 },
+  { "matchNumber": 24, "officialScoreA": 1, "officialScoreB": 3 }
 ]

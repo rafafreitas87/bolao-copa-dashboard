@@ -37,6 +37,7 @@ const participantColors = [
 export function RaceStage({ days }: RaceStageProps) {
   const [dayIndex, setDayIndex] = useState(Math.max(days.length - 1, 0));
   const [playing, setPlaying] = useState(false);
+  const latestDayIndex = Math.max(days.length - 1, 0);
   const currentDay = days[dayIndex];
   const rows = useMemo(() => currentDay?.topRows.slice(0, 8) ?? [], [currentDay]);
 
@@ -46,11 +47,18 @@ export function RaceStage({ days }: RaceStageProps) {
     }
 
     const timer = window.setInterval(() => {
-      setDayIndex((current) => (current + 1) % days.length);
+      setDayIndex((current) => {
+        if (current >= latestDayIndex) {
+          setPlaying(false);
+          return latestDayIndex;
+        }
+
+        return current + 1;
+      });
     }, 1400);
 
     return () => window.clearInterval(timer);
-  }, [days.length, playing]);
+  }, [days.length, latestDayIndex, playing]);
 
   if (days.length === 0) {
     return (
@@ -77,7 +85,10 @@ export function RaceStage({ days }: RaceStageProps) {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setDayIndex(0)}
+            onClick={() => {
+              setPlaying(false);
+              setDayIndex(0);
+            }}
             className="flex size-10 items-center justify-center rounded-md border border-slate-300 bg-white hover:bg-slate-50"
             aria-label="Voltar para o primeiro dia"
           >
@@ -93,11 +104,24 @@ export function RaceStage({ days }: RaceStageProps) {
           </button>
           <button
             type="button"
-            onClick={() => setDayIndex((value) => Math.min(value + 1, days.length - 1))}
+            onClick={() => {
+              setPlaying(false);
+              setDayIndex((value) => Math.min(value + 1, latestDayIndex));
+            }}
             className="flex size-10 items-center justify-center rounded-md border border-slate-300 bg-white hover:bg-slate-50"
             aria-label="Avancar um dia"
           >
             <SkipForward size={18} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPlaying(false);
+              setDayIndex(latestDayIndex);
+            }}
+            className="h-10 rounded-md border border-emerald-700 bg-white px-3 text-sm font-bold text-emerald-800 hover:bg-emerald-50"
+          >
+            Atual
           </button>
         </div>
       </div>
