@@ -14,7 +14,7 @@ import {
   listSupabaseResults,
 } from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
-import { resetAllPredictions } from "./actions";
+import { ResetPredictionsForm } from "./reset-predictions-form";
 
 type AdminPredictionsPageProps = {
   searchParams: Promise<{
@@ -135,11 +135,7 @@ export default async function AdminPredictionsPage({ searchParams }: AdminPredic
                 oficiais.
               </p>
             </div>
-            <form action={resetAllPredictions}>
-              <button className="h-10 rounded-md bg-red-700 px-4 text-sm font-medium text-white hover:bg-red-800">
-                Resetar todos
-              </button>
-            </form>
+            <ResetPredictionsForm />
           </div>
         </section>
 
