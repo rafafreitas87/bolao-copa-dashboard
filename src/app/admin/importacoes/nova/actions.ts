@@ -24,12 +24,24 @@ export async function uploadPredictionFile(formData: FormData) {
   }
 
   if (!hasSupabaseEnv()) {
-    const upload = await createDevUpload({
-      participantId,
-      fileName: file.name,
-      fileType: extension.toUpperCase(),
-      bytes: await file.arrayBuffer(),
-    });
+    let upload;
+
+    try {
+      upload = await createDevUpload({
+        participantId,
+        fileName: file.name,
+        fileType: extension.toUpperCase(),
+        bytes: await file.arrayBuffer(),
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel salvar o arquivo no modo demo.";
+
+      redirect(`/admin/importacoes/nova?error=${encodeURIComponent(message)}`);
+    }
+
     redirect(`/admin/importacoes/${upload.id}/revisar`);
   }
 

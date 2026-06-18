@@ -42,7 +42,9 @@ export type DevPrediction = {
   confirmedAt: string;
 };
 
-const dataDir = path.join(process.cwd(), ".dev-data");
+const dataDir = process.env.VERCEL
+  ? path.join("/tmp", "rf-bolao-dashboard")
+  : path.join(process.cwd(), ".dev-data");
 const uploadDir = path.join(dataDir, "uploads");
 const participantsPath = path.join(dataDir, "participants.json");
 const uploadsPath = path.join(dataDir, "uploads.json");
