@@ -17,6 +17,7 @@ export type RaceDay = {
   leader: RaceRow | null;
   topRows: RaceRow[];
   maxPoints: number;
+  calendarProgress: number;
 };
 
 type RaceStageProps = {
@@ -72,6 +73,9 @@ export function RaceStage({ days }: RaceStageProps) {
   }
 
   const maxPoints = Math.max(currentDay.maxPoints, 1);
+  const calendarProgress = Math.max(currentDay.calendarProgress, 4);
+  const laneHeight = 72;
+  const leaderLaneHeight = 86;
 
   return (
     <section className="mb-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -141,27 +145,34 @@ export function RaceStage({ days }: RaceStageProps) {
             <div className="relative mb-5 flex justify-between text-[10px] font-bold uppercase tracking-wide text-slate-500">
               <span>Largada</span>
               <span>{currentDay.label}</span>
-              <span>Lider</span>
+              <span>Final 19 jul.</span>
             </div>
 
-            <div className="relative space-y-3">
+            <div
+              className="relative"
+              style={{
+                height: rows.length > 0 ? leaderLaneHeight + Math.max(rows.length - 1, 0) * laneHeight : 0,
+              }}
+            >
               {rows.map((row, index) => {
                 const rawProgress = (row.totalPoints / maxPoints) * 100;
                 const progress = Math.min(
-                  Math.max(rawProgress, row.totalPoints > 0 ? 10 : 0),
+                  Math.max((rawProgress * calendarProgress) / 100, row.totalPoints > 0 ? 8 : 0),
                   100,
                 );
                 const color = getParticipantColor(row.participantId);
                 const isLeader = index === 0;
+                const rowTop = index === 0 ? 0 : leaderLaneHeight + (index - 1) * laneHeight;
 
                 return (
                   <div
                     key={row.participantId}
                     className={
                       isLeader
-                        ? "relative h-18 rounded-md border border-white/70 bg-white/30"
-                        : "relative h-14 rounded-md border border-white/70 bg-white/30"
+                        ? "absolute left-0 right-0 h-20 rounded-md border border-white/70 bg-white/30 transition-transform duration-700 ease-out"
+                        : "absolute left-0 right-0 h-16 rounded-md border border-white/70 bg-white/30 transition-transform duration-700 ease-out"
                     }
+                    style={{ transform: `translateY(${rowTop}px)` }}
                   >
                     <div className="absolute left-3 right-3 top-1/2 h-px bg-white/90" />
                     <div
@@ -180,8 +191,8 @@ export function RaceStage({ days }: RaceStageProps) {
                       style={{
                         width: `calc((100% - 1.5rem) * ${progress / 100})`,
                         minWidth: isLeader
-                          ? "min(300px, calc(100% - 1.5rem))"
-                          : "min(260px, calc(100% - 1.5rem))",
+                          ? "min(280px, calc(100% - 1.5rem))"
+                          : "min(240px, calc(100% - 1.5rem))",
                       }}
                     >
                       <div
@@ -217,6 +228,7 @@ export function RaceStage({ days }: RaceStageProps) {
               <span>
                 Dia {dayIndex + 1} de {days.length}
               </span>
+              <span>{Math.round(calendarProgress)}% do calendario</span>
               <span>{currentDay.leader?.totalPoints ?? 0} pontos do lider</span>
             </div>
           </div>

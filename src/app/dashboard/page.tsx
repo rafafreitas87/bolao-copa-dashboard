@@ -17,6 +17,9 @@ import { RaceStage } from "./race-stage";
 
 export const dynamic = "force-dynamic";
 
+const TOURNAMENT_START_DATE = "2026-06-11";
+const TOURNAMENT_FINAL_DATE = "2026-07-19";
+
 export default async function DashboardPage() {
   const dashboard = await getDashboardData();
   const leader = dashboard.ranking[0];
@@ -153,6 +156,7 @@ async function getDashboardData() {
       leader: topRows[0] ?? null,
       topRows,
       maxPoints: Math.max(...topRows.map((row) => row.totalPoints), 0),
+      calendarProgress: getCalendarProgress(date),
     };
   });
 
@@ -163,6 +167,18 @@ async function getDashboardData() {
     participantsWithPredictions: new Set(predictions.map((prediction) => prediction.participantId))
       .size,
   };
+}
+
+function getCalendarProgress(date: string) {
+  const start = new Date(`${TOURNAMENT_START_DATE}T12:00:00`).getTime();
+  const final = new Date(`${TOURNAMENT_FINAL_DATE}T12:00:00`).getTime();
+  const current = new Date(`${date}T12:00:00`).getTime();
+
+  if (final <= start) {
+    return 100;
+  }
+
+  return Math.min(Math.max(((current - start) / (final - start)) * 100, 0), 100);
 }
 
 async function getRankingInputs() {
