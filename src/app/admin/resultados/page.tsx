@@ -2,16 +2,21 @@ import Link from "next/link";
 import { Save } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/session";
 import { listDevResults } from "@/lib/dev-store";
+import {
+  fetchEspnOfficialResults,
+  teamNameMatches,
+} from "@/lib/official-results-source";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { getTeamFlagUrl } from "@/lib/team-flags";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
-import { saveOfficialResults } from "./actions";
+import { applyEspnOfficialResults, saveOfficialResults } from "./actions";
 
 type ResultsPageProps = {
   searchParams: Promise<{
     saved?: string;
     error?: string;
+    externalSynced?: string;
   }>;
 };
 
@@ -23,6 +28,10 @@ type MatchRow = {
   group: string | null;
   teamA: string;
   teamB: string;
+  teamAEn: string;
+  teamBEn: string;
+  teamAAliases: string[];
+  teamBAliases: string[];
   teamAFlagUrl: string | null;
   teamBFlagUrl: string | null;
   stadium: string;
@@ -37,6 +46,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
   const params = await searchParams;
   const matches = await getMatches();
   const grouped = groupByDate(matches);
+  const externalReview = await getExternalReview(matches);
 
   return (
     <main className="min-h-screen bg-[#f7f7f2] px-4 py-8 text-slate-950">
@@ -51,12 +61,20 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
               {matches.length} jogos da fase de grupos.
             </p>
           </div>
-          <Link
-            href="/admin"
-            className="h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
-          >
-            Voltar
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/dashboard"
+              className="h-10 rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/admin"
+              className="h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
+            >
+              Voltar
+            </Link>
+          </div>
         </header>
 
         {params.saved ? (
@@ -71,6 +89,80 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
             {params.error}
           </div>
         ) : null}
+        {params.externalSynced ? (
+          <div className="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            {params.externalSynced} resultados aplicados da ESPN.
+          </div>
+        ) : null}
+
+        <section className="mb-6 rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+            <div>
+              <h2 className="text-lg font-semibold">Conferir fonte externa</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Fonte: ESPN. Revise divergencias antes de aplicar.
+              </p>
+            </div>
+            <form action={applyEspnOfficialResults}>
+              <button className="h-10 rounded-md bg-slate-950 px-4 text-sm font-medium text-white hover:bg-slate-800">
+                Aplicar resultados ESPN
+              </button>
+            </form>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] text-left text-sm">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  <th className="px-5 py-3 font-medium">Jogo</th>
+                  <th className="px-5 py-3 font-medium">Partida</th>
+                  <th className="px-5 py-3 font-medium">Banco</th>
+                  <th className="px-5 py-3 font-medium">ESPN</th>
+                  <th className="px-5 py-3 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {externalReview.rows.map((row) => (
+                  <tr key={row.match.id} className="border-t border-slate-100">
+                    <td className="px-5 py-3 font-medium">{row.match.matchNumber}</td>
+                    <td className="px-5 py-3">
+                      {row.match.teamA} x {row.match.teamB}
+                    </td>
+                    <td className="px-5 py-3">
+                      {row.match.officialScoreA === null || row.match.officialScoreB === null
+                        ? "Pendente"
+                        : `${row.match.officialScoreA} x ${row.match.officialScoreB}`}
+                    </td>
+                    <td className="px-5 py-3 font-semibold">
+                      {row.external
+                        ? `${row.external.officialScoreA} x ${row.external.officialScoreB}`
+                        : "-"}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span
+                        className={
+                          row.status === "DIVERGENTE"
+                            ? "rounded-md bg-red-50 px-2 py-1 text-xs font-bold text-red-700"
+                            : row.status === "OK"
+                              ? "rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700"
+                              : "rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600"
+                        }
+                      >
+                        {row.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {externalReview.rows.length === 0 ? (
+                  <tr>
+                    <td className="px-5 py-8 text-center text-slate-500" colSpan={5}>
+                      Nenhum resultado externo encontrado agora.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         <form action={saveOfficialResults} className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm">
@@ -189,6 +281,10 @@ async function getMatches(): Promise<MatchRow[]> {
         group: fixture.group,
         teamA: fixture.homeTeam,
         teamB: fixture.awayTeam,
+        teamAEn: fixture.homeTeam,
+        teamBEn: fixture.awayTeam,
+        teamAAliases: [fixture.homeTeam],
+        teamBAliases: [fixture.awayTeam],
         teamAFlagUrl: getTeamFlagUrl(fixture.homeTeam),
         teamBFlagUrl: getTeamFlagUrl(fixture.awayTeam),
         stadium: fixture.stadium,
@@ -207,7 +303,7 @@ async function getMatches(): Promise<MatchRow[]> {
         .from("matches")
         .select("*")
         .order("display_order", { ascending: true }),
-      supabase.from("teams").select("id, name"),
+      supabase.from("teams").select("id, name, name_en, aliases"),
     ]);
 
   if (matchesError) {
@@ -218,7 +314,7 @@ async function getMatches(): Promise<MatchRow[]> {
     throw new Error(teamsError.message);
   }
 
-  const teamById = new Map(teams.map((team) => [team.id, team.name]));
+  const teamById = new Map(teams.map((team) => [team.id, team]));
 
   return matches.map((match) => ({
     id: match.id,
@@ -226,16 +322,59 @@ async function getMatches(): Promise<MatchRow[]> {
     date: match.match_date,
     time: match.match_time?.slice(0, 5) ?? "--:--",
     group: match.group_name,
-    teamA: teamById.get(match.team_a_id) ?? "Time A",
-    teamB: teamById.get(match.team_b_id) ?? "Time B",
-    teamAFlagUrl: getTeamFlagUrl(teamById.get(match.team_a_id) ?? ""),
-    teamBFlagUrl: getTeamFlagUrl(teamById.get(match.team_b_id) ?? ""),
+    teamA: teamById.get(match.team_a_id)?.name ?? "Time A",
+    teamB: teamById.get(match.team_b_id)?.name ?? "Time B",
+    teamAEn: teamById.get(match.team_a_id)?.name_en ?? "Team A",
+    teamBEn: teamById.get(match.team_b_id)?.name_en ?? "Team B",
+    teamAAliases: teamById.get(match.team_a_id)?.aliases ?? [],
+    teamBAliases: teamById.get(match.team_b_id)?.aliases ?? [],
+    teamAFlagUrl: getTeamFlagUrl(teamById.get(match.team_a_id)?.name_en ?? ""),
+    teamBFlagUrl: getTeamFlagUrl(teamById.get(match.team_b_id)?.name_en ?? ""),
     stadium: match.stadium ?? "-",
     city: match.city ?? "-",
     officialScoreA: match.official_score_a,
     officialScoreB: match.official_score_b,
     status: match.status,
   }));
+}
+
+async function getExternalReview(matches: MatchRow[]) {
+  try {
+    const externalResults = await fetchEspnOfficialResults();
+    const rows = matches
+      .map((match) => {
+        const external = externalResults.find(
+          (result) =>
+            teamNameMatches(result.teamA, {
+              name: match.teamA,
+              nameEn: match.teamAEn,
+              aliases: match.teamAAliases,
+            }) &&
+            teamNameMatches(result.teamB, {
+              name: match.teamB,
+              nameEn: match.teamBEn,
+              aliases: match.teamBAliases,
+            }),
+        );
+
+        if (!external) {
+          return null;
+        }
+
+        const status =
+          match.officialScoreA === external.officialScoreA &&
+          match.officialScoreB === external.officialScoreB
+            ? "OK"
+            : "DIVERGENTE";
+
+        return { match, external, status };
+      })
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+    return { rows };
+  } catch {
+    return { rows: [] };
+  }
 }
 
 function Flag({ src, name }: { src: string | null; name: string }) {

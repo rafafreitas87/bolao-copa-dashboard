@@ -202,8 +202,14 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
   return (
     <ReviewShell>
       {search.approved ? (
-        <div className="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Palpites aprovados e salvos para este participante.
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          <span>Palpites aprovados e salvos para este participante.</span>
+          <Link
+            href="/dashboard"
+            className="rounded-md bg-emerald-700 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-800"
+          >
+            Ir para dashboard
+          </Link>
         </div>
       ) : null}
       {search.error ? (
@@ -382,12 +388,20 @@ function ReviewShell({ children }: { children: React.ReactNode }) {
             </p>
             <h1 className="text-3xl font-semibold">Conferir arquivo enviado</h1>
           </div>
-          <Link
-            href="/admin/importacoes/nova"
-            className="h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
-          >
-            Voltar
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/dashboard"
+              className="h-10 rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/admin/importacoes/nova"
+              className="h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
+            >
+              Voltar
+            </Link>
+          </div>
         </header>
         {children}
       </div>

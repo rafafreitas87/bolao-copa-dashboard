@@ -3,6 +3,11 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/session";
 import { saveDevResult } from "@/lib/dev-store";
+import {
+  fetchEspnOfficialResults,
+  teamNameMatches,
+} from "@/lib/official-results-source";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -83,4 +88,85 @@ export async function saveOfficialResults(formData: FormData) {
   }
 
   redirect(`/admin/resultados?saved=${results.length}`);
+}
+
+export async function applyEspnOfficialResults() {
+  await requireAdmin();
+
+  if (!hasSupabaseEnv()) {
+    redirect("/admin/resultados?error=Sincronizacao%20externa%20disponivel%20so%20em%20producao");
+  }
+
+  let applied = 0;
+
+  try {
+  const externalResults = await fetchEspnOfficialResults();
+  const supabase = createAdminClient();
+  const [{ data: matches, error: matchesError }, { data: teams, error: teamsError }] =
+    await Promise.all([
+      supabase
+        .from("matches")
+        .select("id, source_match_number, team_a_id, team_b_id")
+        .not("source_match_number", "is", null),
+      supabase.from("teams").select("id, name, name_en, aliases"),
+    ]);
+
+  if (matchesError) {
+    throw new Error(matchesError.message);
+  }
+
+  if (teamsError) {
+    throw new Error(teamsError.message);
+  }
+
+  const teamById = new Map(teams.map((team) => [team.id, team]));
+
+  for (const external of externalResults) {
+    const match = matches.find((candidate) => {
+      const home = teamById.get(candidate.team_a_id);
+      const away = teamById.get(candidate.team_b_id);
+
+      if (!home || !away) {
+        return false;
+      }
+
+      return (
+        teamNameMatches(external.teamA, {
+          name: home.name,
+          nameEn: home.name_en,
+          aliases: home.aliases,
+        }) &&
+        teamNameMatches(external.teamB, {
+          name: away.name,
+          nameEn: away.name_en,
+          aliases: away.aliases,
+        })
+      );
+    });
+
+    if (!match) {
+      continue;
+    }
+
+    const { error } = await supabase
+      .from("matches")
+      .update({
+        official_score_a: external.officialScoreA,
+        official_score_b: external.officialScoreB,
+        status: "FINISHED",
+      })
+      .eq("id", match.id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    applied += 1;
+  }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro ao sincronizar ESPN";
+    redirect(`/admin/resultados?error=${encodeURIComponent(message)}`);
+  }
+
+  redirect(`/admin/resultados?externalSynced=${applied}`);
 }
