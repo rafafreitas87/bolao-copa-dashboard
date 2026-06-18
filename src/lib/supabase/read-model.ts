@@ -197,13 +197,21 @@ export async function saveSupabasePredictionsForParticipant(input: {
     })
     .filter((row): row is NonNullable<typeof row> => Boolean(row));
 
-  if (rows.length === 0) {
+  const rowsByMatchId = new Map<string, (typeof rows)[number]>();
+
+  for (const row of rows) {
+    rowsByMatchId.set(row.match_id, row);
+  }
+
+  const dedupedRows = [...rowsByMatchId.values()];
+
+  if (dedupedRows.length === 0) {
     return;
   }
 
   const { error } = await supabase
     .from("predictions")
-    .upsert(rows, { onConflict: "participant_id,match_id" });
+    .upsert(dedupedRows, { onConflict: "participant_id,match_id" });
 
   if (error) {
     throw new Error(error.message);

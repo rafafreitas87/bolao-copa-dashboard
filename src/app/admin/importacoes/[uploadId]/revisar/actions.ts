@@ -37,10 +37,15 @@ export async function approveDetectedPredictions(formData: FormData) {
   }
 
   if (hasSupabaseEnv()) {
-    await saveSupabasePredictionsForUpload({
-      upload,
-      predictions: preview.detectedPredictions,
-    });
+    try {
+      await saveSupabasePredictionsForUpload({
+        upload,
+        predictions: preview.detectedPredictions,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao aprovar palpites";
+      redirect(`/admin/importacoes/${uploadId}/revisar?error=${encodeURIComponent(message)}`);
+    }
   } else {
     await saveDevPredictionsForUpload({
       upload,
@@ -88,10 +93,15 @@ export async function saveManualPredictions(formData: FormData) {
   }
 
   if (hasSupabaseEnv()) {
-    await saveSupabasePredictionsForUpload({
-      upload,
-      predictions,
-    });
+    try {
+      await saveSupabasePredictionsForUpload({
+        upload,
+        predictions,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao salvar palpites";
+      redirect(`/admin/importacoes/${uploadId}/revisar?error=${encodeURIComponent(message)}`);
+    }
   } else {
     await saveDevPredictionsForUpload({
       upload,

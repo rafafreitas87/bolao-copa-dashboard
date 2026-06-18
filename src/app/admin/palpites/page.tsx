@@ -7,6 +7,12 @@ import {
   listDevUploads,
 } from "@/lib/dev-store";
 import { buildRanking } from "@/lib/scoring";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
+import {
+  listSupabaseParticipants,
+  listSupabasePredictions,
+  listSupabaseResults,
+} from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 import { resetAllPredictions } from "./actions";
 
@@ -21,13 +27,21 @@ export default async function AdminPredictionsPage({ searchParams }: AdminPredic
   await requireAdmin();
   const search = await searchParams;
 
-  const [participants, predictions, results, uploads, fixtures] = await Promise.all([
-    listDevParticipants(),
-    listDevPredictions(),
-    listDevResults(),
-    listDevUploads(),
-    getGroupStageFixtures(),
-  ]);
+  const [participants, predictions, results, uploads, fixtures] = hasSupabaseEnv()
+    ? await Promise.all([
+        listSupabaseParticipants(),
+        listSupabasePredictions(),
+        listSupabaseResults(),
+        listSupabaseUploads(),
+        getGroupStageFixtures(),
+      ])
+    : await Promise.all([
+        listDevParticipants(),
+        listDevPredictions(),
+        listDevResults(),
+        listDevUploads(),
+        getGroupStageFixtures(),
+      ]);
 
   const totalMatches = fixtures.length;
   const rankingByParticipantId = new Map(
@@ -205,4 +219,27 @@ export default async function AdminPredictionsPage({ searchParams }: AdminPredic
       </div>
     </main>
   );
+}
+
+async function listSupabaseUploads() {
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("uploads")
+    .select("id, participant_id, file_name, file_type, storage_path, uploaded_at, status")
+    .order("uploaded_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data.map((upload) => ({
+    id: upload.id,
+    participantId: upload.participant_id,
+    fileName: upload.file_name,
+    fileType: upload.file_type,
+    storagePath: upload.storage_path,
+    uploadedAt: upload.uploaded_at,
+    status: "UPLOADED" as const,
+  }));
 }
