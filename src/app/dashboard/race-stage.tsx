@@ -33,6 +33,10 @@ const participantColors = [
   "#0f766e",
   "#4338ca",
   "#c2410c",
+  "#9333ea",
+  "#0e7490",
+  "#ca8a04",
+  "#dc2626",
 ];
 
 export function RaceStage({ days }: RaceStageProps) {
@@ -40,7 +44,7 @@ export function RaceStage({ days }: RaceStageProps) {
   const [playing, setPlaying] = useState(false);
   const latestDayIndex = Math.max(days.length - 1, 0);
   const currentDay = days[dayIndex];
-  const rows = useMemo(() => currentDay?.topRows.slice(0, 8) ?? [], [currentDay]);
+  const rows = useMemo(() => currentDay?.topRows ?? [], [currentDay]);
 
   useEffect(() => {
     if (!playing || days.length <= 1) {
@@ -83,7 +87,7 @@ export function RaceStage({ days }: RaceStageProps) {
         <div>
           <h2 className="text-lg font-semibold">Corrida do ranking</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Evolucao acumulada por dia de jogo finalizado. Mostrando o top 8.
+            Evolucao acumulada por dia de jogo finalizado. Top 10 e lanterna dos R$ 50.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -166,6 +170,7 @@ export function RaceStage({ days }: RaceStageProps) {
               }}
             >
               {rows.map((row, index) => {
+                const isLastPrize = index === rows.length - 1 && rows.length > 10;
                 const rawProgress = (row.totalPoints / maxPoints) * 100;
                 const progress = Math.min(
                   Math.max((rawProgress * calendarProgress) / 100, row.totalPoints > 0 ? 8 : 0),
@@ -182,7 +187,9 @@ export function RaceStage({ days }: RaceStageProps) {
                     className={
                       isLeader
                         ? "absolute left-0 right-0 h-16 rounded-md border border-white/70 bg-white/30 transition-transform duration-700 ease-out"
-                        : "absolute left-0 right-0 h-14 rounded-md border border-white/70 bg-white/30 transition-transform duration-700 ease-out"
+                        : isLastPrize
+                          ? "absolute left-0 right-0 h-14 rounded-md border border-amber-300/80 bg-amber-100/35 transition-transform duration-700 ease-out"
+                          : "absolute left-0 right-0 h-14 rounded-md border border-white/70 bg-white/30 transition-transform duration-700 ease-out"
                     }
                     style={{ transform: `translateY(${rowTop}px)` }}
                   >
@@ -222,11 +229,15 @@ export function RaceStage({ days }: RaceStageProps) {
                         />
                         <div className="min-w-0 flex-1">
                           <p className={isLeader ? "truncate text-sm font-black" : "truncate text-xs font-bold"}>
-                            <span className="mr-2 text-xs text-slate-500">{index + 1}.</span>
+                            <span className="mr-2 text-xs text-slate-500">
+                              {isLastPrize ? "Lanterna" : `${index + 1}.`}
+                            </span>
                             {row.participantName}
                           </p>
                           <p className="truncate text-[11px] text-slate-500">
-                            {row.exactScores} cravados - {row.correctOutcomes} finais
+                            {isLastPrize
+                              ? "premio R$ 50"
+                              : `${row.exactScores} cravados - ${row.correctOutcomes} finais`}
                           </p>
                         </div>
                         <div className="ml-auto text-right">
@@ -278,7 +289,7 @@ export function RaceStage({ days }: RaceStageProps) {
           </label>
 
           <div className="mt-6 space-y-2">
-            {rows.slice(0, 5).map((row, index) => (
+            {rows.slice(0, 10).map((row, index) => (
               <div
                 key={row.participantId}
                 className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2"
@@ -295,6 +306,18 @@ export function RaceStage({ days }: RaceStageProps) {
                 <span className="text-sm font-bold">{row.totalPoints}</span>
               </div>
             ))}
+            {rows.length > 10 ? (
+              <div className="flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+                <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+                  <HorseMarker
+                    color={getParticipantColor(rows[10].participantId)}
+                    initials={getInitials(rows[10].participantName)}
+                  />
+                  <span className="truncate">Lanterna R$ 50: {rows[10].participantName}</span>
+                </span>
+                <span className="text-sm font-bold">{rows[10].totalPoints}</span>
+              </div>
+            ) : null}
           </div>
         </aside>
       </div>

@@ -145,7 +145,7 @@ async function getDashboardData() {
     const dayRanking = buildRanking(participants, predictions, dayResults).filter(
       (row) => row.totalPredictions > 0 || row.totalPoints > 0,
     );
-    const topRows = dayRanking.slice(0, 8);
+    const topRows = getRaceRows(dayRanking);
 
     return {
       date,
@@ -167,6 +167,17 @@ async function getDashboardData() {
     participantsWithPredictions: new Set(predictions.map((prediction) => prediction.participantId))
       .size,
   };
+}
+
+function getRaceRows<T extends { participantId: string }>(ranking: T[]) {
+  const topRows = ranking.slice(0, 10);
+  const lastRow = ranking.at(-1);
+
+  if (!lastRow || topRows.some((row) => row.participantId === lastRow.participantId)) {
+    return topRows;
+  }
+
+  return [...topRows, lastRow];
 }
 
 function getCalendarProgress(date: string) {
