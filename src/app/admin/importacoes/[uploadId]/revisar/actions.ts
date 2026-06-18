@@ -10,6 +10,7 @@ import {
 import { parseUploadPreview } from "@/lib/import/parse-upload";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { saveSupabasePredictionsForParticipant } from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 
 export async function approveDetectedPredictions(formData: FormData) {
@@ -149,45 +150,12 @@ async function saveSupabasePredictionsForUpload(input: {
   }>;
 }) {
   const supabase = createAdminClient();
-  const { data: matches, error: matchesError } = await supabase
-    .from("matches")
-    .select("id, source_match_number")
-    .in(
-      "source_match_number",
-      input.predictions.map((prediction) => prediction.matchNumber),
-    );
-
-  if (matchesError) {
-    throw new Error(matchesError.message);
-  }
-
-  const matchIdByNumber = new Map(matches.map((match) => [match.source_match_number, match.id]));
-  const rows = input.predictions
-    .map((prediction) => {
-      const matchId = matchIdByNumber.get(prediction.matchNumber);
-
-      if (!matchId) {
-        return null;
-      }
-
-      return {
-        participant_id: input.upload.participantId,
-        match_id: matchId,
-        predicted_score_a: prediction.predictedScoreA,
-        predicted_score_b: prediction.predictedScoreB,
-        source_file_name: input.upload.fileName,
-        source_upload_id: input.upload.id,
-      };
-    })
-    .filter((row): row is NonNullable<typeof row> => Boolean(row));
-
-  const { error } = await supabase
-    .from("predictions")
-    .upsert(rows, { onConflict: "participant_id,match_id" });
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  await saveSupabasePredictionsForParticipant({
+    participantId: input.upload.participantId,
+    uploadId: input.upload.id,
+    sourceFileName: input.upload.fileName,
+    predictions: input.predictions,
+  });
 
   await supabase
     .from("uploads")

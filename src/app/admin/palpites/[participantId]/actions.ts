@@ -7,6 +7,10 @@ import {
   saveDevPredictionsForParticipant,
 } from "@/lib/dev-store";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
+import {
+  listSupabaseParticipants,
+  saveSupabasePredictionsForParticipant,
+} from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 
 export async function saveParticipantPredictions(formData: FormData) {
@@ -14,11 +18,7 @@ export async function saveParticipantPredictions(formData: FormData) {
 
   const participantId = String(formData.get("participantId") ?? "");
 
-  if (hasSupabaseEnv()) {
-    redirect(`/admin/palpites/${participantId}?error=Edicao%20Supabase%20pendente`);
-  }
-
-  const participants = await listDevParticipants();
+  const participants = hasSupabaseEnv() ? await listSupabaseParticipants() : await listDevParticipants();
   const participant = participants.find((row) => row.id === participantId);
 
   if (!participant) {
@@ -57,11 +57,20 @@ export async function saveParticipantPredictions(formData: FormData) {
     })
     .filter((prediction): prediction is NonNullable<typeof prediction> => Boolean(prediction));
 
-  await saveDevPredictionsForParticipant({
-    participantId,
-    predictions,
-    sourceFileName: "Edicao manual",
-  });
+  if (hasSupabaseEnv()) {
+    await saveSupabasePredictionsForParticipant({
+      participantId,
+      predictions,
+      sourceFileName: "Edicao manual",
+      replaceParticipant: true,
+    });
+  } else {
+    await saveDevPredictionsForParticipant({
+      participantId,
+      predictions,
+      sourceFileName: "Edicao manual",
+    });
+  }
 
   redirect(`/admin/palpites/${participantId}?saved=1`);
 }

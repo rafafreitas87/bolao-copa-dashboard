@@ -9,7 +9,10 @@ import {
 import { parseUploadPreview } from "@/lib/import/parse-upload";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
-import { listSupabaseParticipants } from "@/lib/supabase/read-model";
+import {
+  listSupabaseParticipants,
+  listSupabasePredictionsByUpload,
+} from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 import { approveDetectedPredictions, saveManualPredictions } from "./actions";
 
@@ -403,7 +406,7 @@ function Info({ label, value }: { label: string; value: string }) {
 
 async function getSupabaseReviewData(uploadId: string) {
   const supabase = createAdminClient();
-  const [{ data: upload, error: uploadError }, participants] =
+  const [{ data: upload, error: uploadError }, participants, savedPredictions] =
     await Promise.all([
       supabase
         .from("uploads")
@@ -411,6 +414,7 @@ async function getSupabaseReviewData(uploadId: string) {
         .eq("id", uploadId)
         .maybeSingle(),
       listSupabaseParticipants(),
+      listSupabasePredictionsByUpload(uploadId),
     ]);
 
   if (uploadError) {
@@ -430,7 +434,7 @@ async function getSupabaseReviewData(uploadId: string) {
         }
       : null,
     participants,
-    [],
+    savedPredictions,
   ] as const;
 }
 

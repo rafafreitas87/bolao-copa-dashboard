@@ -100,3 +100,99 @@ export async function listSupabasePredictions(): Promise<DevPrediction[]> {
     })
     .filter((prediction): prediction is DevPrediction => Boolean(prediction));
 }
+
+export async function listSupabasePredictionsByParticipant(
+  participantId: string,
+): Promise<DevPrediction[]> {
+  const predictions = await listSupabasePredictions();
+
+  return predictions
+    .filter((prediction) => prediction.participantId === participantId)
+    .sort((a, b) => a.matchNumber - b.matchNumber);
+}
+
+export async function listSupabasePredictionsByUpload(uploadId: string): Promise<DevPrediction[]> {
+  const predictions = await listSupabasePredictions();
+
+  return predictions
+    .filter((prediction) => prediction.uploadId === uploadId)
+    .sort((a, b) => a.matchNumber - b.matchNumber);
+}
+
+export async function saveSupabasePredictionsForParticipant(input: {
+  participantId: string;
+  uploadId?: string | null;
+  sourceFileName?: string | null;
+  replaceParticipant?: boolean;
+  predictions: Array<{
+    matchNumber: number;
+    predictedScoreA: number;
+    predictedScoreB: number;
+  }>;
+}) {
+  const supabase = createAdminClient();
+
+  if (input.replaceParticipant) {
+    const { error: deleteScoresError } = await supabase
+      .from("prediction_scores")
+      .delete()
+      .eq("participant_id", input.participantId);
+
+    if (deleteScoresError) {
+      throw new Error(deleteScoresError.message);
+    }
+
+    const { error: deletePredictionsError } = await supabase
+      .from("predictions")
+      .delete()
+      .eq("participant_id", input.participantId);
+
+    if (deletePredictionsError) {
+      throw new Error(deletePredictionsError.message);
+    }
+  }
+
+  const { data: matches, error: matchesError } = await supabase
+    .from("matches")
+    .select("id, source_match_number")
+    .in(
+      "source_match_number",
+      input.predictions.map((prediction) => prediction.matchNumber),
+    );
+
+  if (matchesError) {
+    throw new Error(matchesError.message);
+  }
+
+  const matchIdByNumber = new Map(matches.map((match) => [match.source_match_number, match.id]));
+  const rows = input.predictions
+    .map((prediction) => {
+      const matchId = matchIdByNumber.get(prediction.matchNumber);
+
+      if (!matchId) {
+        return null;
+      }
+
+      return {
+        participant_id: input.participantId,
+        match_id: matchId,
+        predicted_score_a: prediction.predictedScoreA,
+        predicted_score_b: prediction.predictedScoreB,
+        source_file_name: input.sourceFileName ?? "Edicao manual",
+        source_upload_id: input.uploadId ?? null,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+  if (rows.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("predictions")
+    .upsert(rows, { onConflict: "participant_id,match_id" });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}

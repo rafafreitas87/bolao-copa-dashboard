@@ -7,6 +7,12 @@ import {
   listDevUploads,
 } from "@/lib/dev-store";
 import { calculatePredictionScore } from "@/lib/scoring";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
+import {
+  listSupabaseParticipants,
+  listSupabasePredictionsByParticipant,
+  listSupabaseResults,
+} from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 import { saveParticipantPredictions } from "./actions";
 
@@ -28,13 +34,21 @@ export default async function ParticipantPredictionsPage({
   const { participantId } = await params;
   const search = await searchParams;
 
-  const [participants, predictions, results, fixtures, uploads] = await Promise.all([
-    listDevParticipants(),
-    getDevPredictionsByParticipant(participantId),
-    listDevResults(),
-    getGroupStageFixtures(),
-    listDevUploads(),
-  ]);
+  const [participants, predictions, results, fixtures, uploads] = hasSupabaseEnv()
+    ? await Promise.all([
+        listSupabaseParticipants(),
+        listSupabasePredictionsByParticipant(participantId),
+        listSupabaseResults(),
+        getGroupStageFixtures(),
+        listSupabaseUploads(),
+      ])
+    : await Promise.all([
+        listDevParticipants(),
+        getDevPredictionsByParticipant(participantId),
+        listDevResults(),
+        getGroupStageFixtures(),
+        listDevUploads(),
+      ]);
 
   const participant = participants.find((row) => row.id === participantId);
 
@@ -226,4 +240,27 @@ export default async function ParticipantPredictionsPage({
       </div>
     </main>
   );
+}
+
+async function listSupabaseUploads() {
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("uploads")
+    .select("id, participant_id, file_name, file_type, storage_path, uploaded_at, status")
+    .order("uploaded_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data.map((upload) => ({
+    id: upload.id,
+    participantId: upload.participant_id,
+    fileName: upload.file_name,
+    fileType: upload.file_type,
+    storagePath: upload.storage_path,
+    uploadedAt: upload.uploaded_at,
+    status: "UPLOADED" as const,
+  }));
 }
