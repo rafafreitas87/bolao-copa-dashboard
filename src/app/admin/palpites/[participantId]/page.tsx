@@ -14,6 +14,7 @@ import {
   listSupabaseResults,
 } from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
+import { LoadingLink } from "../../loading-link";
 import { SubmitButton } from "../../submit-button";
 import { saveParticipantPredictions } from "./actions";
 
@@ -89,12 +90,13 @@ export default async function ParticipantPredictionsPage({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link
+            <LoadingLink
               href={`/admin/importacoes/nova?participantId=${participant.id}`}
+              loadingText="Abrindo importacao..."
               className="h-10 rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
             >
               Importar arquivo
-            </Link>
+            </LoadingLink>
             <Link
               href="/admin/palpites"
               className="h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
@@ -120,13 +122,14 @@ export default async function ParticipantPredictionsPage({
             <h2 className="text-lg font-semibold">Arquivos importados</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {participantUploads.map((upload) => (
-                <Link
+                <LoadingLink
                   key={upload.id}
                   href={`/admin/importacoes/${upload.id}/revisar`}
+                  loadingText="Abrindo..."
                   className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium hover:bg-slate-50"
                 >
                   {upload.fileName}
-                </Link>
+                </LoadingLink>
               ))}
             </div>
           </section>

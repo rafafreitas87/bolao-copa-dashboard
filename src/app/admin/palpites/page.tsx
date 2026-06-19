@@ -14,6 +14,7 @@ import {
   listSupabaseResults,
 } from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
+import { LoadingLink } from "../loading-link";
 import { ResetPredictionsForm } from "./reset-predictions-form";
 
 type AdminPredictionsPageProps = {
@@ -100,12 +101,13 @@ export default async function AdminPredictionsPage({ searchParams }: AdminPredic
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link
+            <LoadingLink
               href="/admin/importacoes/nova"
+              loadingText="Abrindo importacao..."
               className="h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
             >
               Importar arquivo
-            </Link>
+            </LoadingLink>
             <Link
               href="/admin"
               className="h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
@@ -192,18 +194,20 @@ export default async function AdminPredictionsPage({ searchParams }: AdminPredic
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex justify-end gap-2">
-                        <Link
+                        <LoadingLink
                           href={`/admin/palpites/${participant.id}`}
+                          loadingText="Abrindo..."
                           className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium hover:bg-slate-50"
                         >
                           Revisar
-                        </Link>
-                        <Link
+                        </LoadingLink>
+                        <LoadingLink
                           href={`/admin/importacoes/nova?participantId=${participant.id}`}
+                          loadingText="Abrindo..."
                           className="rounded-md bg-emerald-700 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-800"
                         >
                           Importar
-                        </Link>
+                        </LoadingLink>
                       </div>
                     </td>
                   </tr>

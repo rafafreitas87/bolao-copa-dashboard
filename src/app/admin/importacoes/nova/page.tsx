@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { listDevParticipants, listDevUploads } from "@/lib/dev-store";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { LoadingLink } from "../../loading-link";
 import { SubmitButton } from "../../submit-button";
 import { uploadPredictionFile } from "./actions";
 
@@ -132,12 +133,13 @@ export default async function NewImportPage({ searchParams }: NewImportPageProps
                       {new Date(upload.uploadedAt).toLocaleString("pt-BR")}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <Link
+                      <LoadingLink
                         href={`/admin/importacoes/${upload.id}/revisar`}
+                        loadingText="Abrindo..."
                         className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium hover:bg-slate-50"
                       >
                         Revisar
-                      </Link>
+                      </LoadingLink>
                     </td>
                   </tr>
                 ))}
