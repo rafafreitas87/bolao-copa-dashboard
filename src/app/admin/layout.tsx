@@ -37,6 +37,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               Resultados
             </LoadingLink>
+            <LoadingLink
+              href="/admin/solicitacoes"
+              loadingText="Abrindo..."
+              className="h-9 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-bold hover:bg-slate-50"
+            >
+              Solicitacoes
+            </LoadingLink>
+            <LoadingLink
+              href="/admin/configuracoes"
+              loadingText="Abrindo..."
+              className="h-9 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-bold hover:bg-slate-50"
+            >
+              Config
+            </LoadingLink>
           </div>
         </div>
       </nav>

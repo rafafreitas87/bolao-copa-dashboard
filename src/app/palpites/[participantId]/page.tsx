@@ -11,7 +11,9 @@ import {
   listSupabasePredictions,
   listSupabaseResults,
 } from "@/lib/supabase/read-model";
-import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
+import { getSpreadsheetOrderedFixtures } from "@/lib/fixture-order";
+import { getBooleanConfig } from "@/lib/app-config";
+import { requestPredictionCorrection } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -19,15 +21,22 @@ type PublicParticipantPredictionsPageProps = {
   params: Promise<{
     participantId: string;
   }>;
+  searchParams: Promise<{
+    revisionRequested?: string;
+    error?: string;
+  }>;
 };
 
 export default async function PublicParticipantPredictionsPage({
   params,
+  searchParams,
 }: PublicParticipantPredictionsPageProps) {
   const { participantId } = await params;
+  const search = await searchParams;
 
   const [participants, allPredictions, results, fixtures, usingSupabase] =
     await getParticipantPredictionInputs(participantId);
+  const correctionRequestsEnabled = await getBooleanConfig("correction_requests_enabled", false);
   const predictions = usingSupabase
     ? allPredictions.filter((prediction) => prediction.participantId === participantId)
     : allPredictions;
@@ -72,6 +81,17 @@ export default async function PublicParticipantPredictionsPage({
           </Link>
         </header>
 
+        {search.revisionRequested ? (
+          <div className="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            Solicitacao de revisao enviada para o admin.
+          </div>
+        ) : null}
+        {search.error ? (
+          <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {search.error}
+          </div>
+        ) : null}
+
         <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-5 py-4">
             <h2 className="text-lg font-semibold">Todos os jogos</h2>
@@ -89,6 +109,9 @@ export default async function PublicParticipantPredictionsPage({
                   <th className="px-5 py-3 font-medium">Palpite</th>
                   <th className="px-5 py-3 font-medium">Oficial</th>
                   <th className="px-5 py-3 font-medium">Pontos</th>
+                  {correctionRequestsEnabled ? (
+                    <th className="px-5 py-3 font-medium">Revisao</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -140,6 +163,56 @@ export default async function PublicParticipantPredictionsPage({
                           {score ? score.points : "-"}
                         </span>
                       </td>
+                      {correctionRequestsEnabled ? (
+                        <td className="px-5 py-3">
+                          {prediction ? (
+                            <form
+                              action={requestPredictionCorrection}
+                              className="flex min-w-[360px] flex-wrap items-end gap-2"
+                            >
+                              <input type="hidden" name="participantId" value={participant.id} />
+                              <input type="hidden" name="matchNumber" value={fixture.matchNumber} />
+                              <label className="block">
+                                <span className="text-[11px] font-medium text-slate-500">Correto</span>
+                                <div className="mt-1 flex items-center gap-1">
+                                  <input
+                                    name="requestedScoreA"
+                                    type="number"
+                                    min={0}
+                                    required
+                                    defaultValue={prediction.predictedScoreA}
+                                    className="h-8 w-12 rounded-md border border-slate-300 px-2 text-center"
+                                  />
+                                  <span className="text-slate-400">x</span>
+                                  <input
+                                    name="requestedScoreB"
+                                    type="number"
+                                    min={0}
+                                    required
+                                    defaultValue={prediction.predictedScoreB}
+                                    className="h-8 w-12 rounded-md border border-slate-300 px-2 text-center"
+                                  />
+                                </div>
+                              </label>
+                              <input
+                                name="requesterName"
+                                placeholder="Seu nome"
+                                className="h-8 w-28 rounded-md border border-slate-300 px-2 text-xs"
+                              />
+                              <input
+                                name="note"
+                                placeholder="Obs."
+                                className="h-8 w-28 rounded-md border border-slate-300 px-2 text-xs"
+                              />
+                              <button className="h-8 rounded-md bg-amber-600 px-3 text-xs font-bold text-white hover:bg-amber-700">
+                                Solicitar
+                              </button>
+                            </form>
+                          ) : (
+                            <span className="text-xs text-slate-400">Sem palpite</span>
+                          )}
+                        </td>
+                      ) : null}
                     </tr>
                   );
                 })}
@@ -159,7 +232,7 @@ async function getParticipantPredictionInputs(participantId: string) {
         listSupabaseParticipants(),
         listSupabasePredictions(),
         listSupabaseResults(),
-        getGroupStageFixtures(),
+        getSpreadsheetOrderedFixtures(),
       ]);
 
       return [...rows, true] as const;
@@ -172,7 +245,7 @@ async function getParticipantPredictionInputs(participantId: string) {
     listDevParticipants(),
     getDevPredictionsByParticipant(participantId),
     listDevResults(),
-    getGroupStageFixtures(),
+    getSpreadsheetOrderedFixtures(),
   ]);
 
   return [...rows, false] as const;

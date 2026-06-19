@@ -101,6 +101,27 @@ export type PredictionScore = {
   calculated_at: string;
 };
 
+export type CorrectionRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type PredictionCorrectionRequest = {
+  id: string;
+  participant_id: string;
+  prediction_id: string | null;
+  match_id: string;
+  current_score_a: number | null;
+  current_score_b: number | null;
+  requested_score_a: number;
+  requested_score_b: number;
+  requester_name: string | null;
+  note: string | null;
+  status: CorrectionRequestStatus;
+  reviewed_by_user_id: string | null;
+  reviewed_at: string | null;
+  admin_note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -159,12 +180,23 @@ export type Database = {
         Update: Partial<PredictionScore>;
         Relationships: [];
       };
+      prediction_correction_requests: {
+        Row: PredictionCorrectionRequest;
+        Insert: Partial<PredictionCorrectionRequest> &
+          Pick<
+            PredictionCorrectionRequest,
+            "participant_id" | "match_id" | "requested_score_a" | "requested_score_b"
+          >;
+        Update: Partial<PredictionCorrectionRequest>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: {
       user_role: UserRole;
       match_status: "PENDING" | "FINISHED" | "CANCELLED";
+      correction_request_status: CorrectionRequestStatus;
     };
     CompositeTypes: Record<string, never>;
   };

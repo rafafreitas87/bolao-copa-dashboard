@@ -13,7 +13,7 @@ import {
   listSupabasePredictionsByParticipant,
   listSupabaseResults,
 } from "@/lib/supabase/read-model";
-import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
+import { getSpreadsheetOrderedFixtures } from "@/lib/fixture-order";
 import { LoadingLink } from "../../loading-link";
 import { SubmitButton } from "../../submit-button";
 import { saveParticipantPredictions } from "./actions";
@@ -41,14 +41,14 @@ export default async function ParticipantPredictionsPage({
         listSupabaseParticipants(),
         listSupabasePredictionsByParticipant(participantId),
         listSupabaseResults(),
-        getGroupStageFixtures(),
+        getSpreadsheetOrderedFixtures(),
         listSupabaseUploads(),
       ])
     : await Promise.all([
         listDevParticipants(),
         getDevPredictionsByParticipant(participantId),
         listDevResults(),
-        getGroupStageFixtures(),
+        getSpreadsheetOrderedFixtures(),
         listDevUploads(),
       ]);
 

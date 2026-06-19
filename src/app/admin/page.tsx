@@ -4,6 +4,7 @@ import {
   Database,
   FileUp,
   ListChecks,
+  Settings,
   Shield,
   Users,
 } from "lucide-react";
@@ -88,6 +89,28 @@ export default async function AdminPage() {
             <h2 className="font-semibold">Revisar palpites</h2>
             <p className="mt-2 text-sm text-slate-600">
               Conferir palpites aprovados, arquivo de origem e pontuacao por jogo.
+            </p>
+          </LoadingLink>
+          <LoadingLink
+            href="/admin/solicitacoes"
+            loadingText="Abrindo solicitacoes..."
+            className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-300 hover:shadow-md"
+          >
+            <ClipboardCheck className="mb-4 text-emerald-700" size={24} aria-hidden="true" />
+            <h2 className="font-semibold">Solicitacoes</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Aprovar ou rejeitar correcoes pedidas pelos participantes.
+            </p>
+          </LoadingLink>
+          <LoadingLink
+            href="/admin/configuracoes"
+            loadingText="Abrindo config..."
+            className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-300 hover:shadow-md"
+          >
+            <Settings className="mb-4 text-emerald-700" size={24} aria-hidden="true" />
+            <h2 className="font-semibold">Configuracoes</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Ativar ou desativar recursos publicos do bolao.
             </p>
           </LoadingLink>
           <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">

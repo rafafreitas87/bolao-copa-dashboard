@@ -11,7 +11,7 @@ import {
   listSupabaseParticipants,
   saveSupabasePredictionsForParticipant,
 } from "@/lib/supabase/read-model";
-import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
+import { getSpreadsheetOrderedFixtures } from "@/lib/fixture-order";
 
 export async function saveParticipantPredictions(formData: FormData) {
   await requireAdmin();
@@ -25,7 +25,7 @@ export async function saveParticipantPredictions(formData: FormData) {
     redirect("/admin/palpites?error=Participante%20nao%20encontrado");
   }
 
-  const fixtures = await getGroupStageFixtures();
+  const fixtures = await getSpreadsheetOrderedFixtures();
   const predictions = fixtures
     .map((fixture) => {
       const scoreA = String(formData.get(`scoreA_${fixture.matchNumber}`) ?? "").trim();

@@ -11,7 +11,7 @@ import { parseUploadPreview } from "@/lib/import/parse-upload";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { saveSupabasePredictionsForParticipant } from "@/lib/supabase/read-model";
-import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
+import { getSpreadsheetOrderedFixtures } from "@/lib/fixture-order";
 
 type ApprovalUpload = {
   id: string;
@@ -154,7 +154,7 @@ export async function saveManualPredictions(formData: FormData) {
     redirect("/admin/importacoes/nova?error=Upload%20nao%20encontrado");
   }
 
-  const fixtures = await getGroupStageFixtures();
+  const fixtures = await getSpreadsheetOrderedFixtures();
   const predictions = fixtures
     .map((fixture) => {
       const scoreA = String(formData.get(`scoreA_${fixture.matchNumber}`) ?? "");

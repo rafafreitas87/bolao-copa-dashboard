@@ -13,7 +13,7 @@ import {
   listSupabaseParticipants,
   listSupabasePredictionsByUpload,
 } from "@/lib/supabase/read-model";
-import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
+import { getSpreadsheetOrderedFixtures } from "@/lib/fixture-order";
 import { SubmitButton } from "../../../submit-button";
 import { approveDetectedPredictions, saveManualPredictions } from "./actions";
 
@@ -54,7 +54,7 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
   }
 
   const participant = participants.find((row) => row.id === upload.participantId);
-  const fixtures = await getGroupStageFixtures();
+  const fixtures = await getSpreadsheetOrderedFixtures();
   let preview: Awaited<ReturnType<typeof parseUploadPreview>> | null = null;
   let previewError: string | null = null;
 
