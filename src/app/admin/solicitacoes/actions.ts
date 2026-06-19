@@ -15,7 +15,7 @@ export async function approveCorrectionRequest(formData: FormData) {
   const supabase = createAdminClient();
   const { data: request, error: requestError } = await supabase
     .from("prediction_correction_requests")
-    .select("id, prediction_id, requested_score_a, requested_score_b, status")
+    .select("id, participant_id, prediction_id, match_id, requested_score_a, requested_score_b, status")
     .eq("id", requestId)
     .maybeSingle();
 
@@ -23,19 +23,25 @@ export async function approveCorrectionRequest(formData: FormData) {
     redirect("/admin/solicitacoes?error=Solicitacao%20nao%20esta%20pendente");
   }
 
-  if (!request.prediction_id) {
-    redirect("/admin/solicitacoes?error=Palpite%20original%20nao%20encontrado");
-  }
+  const predictionMutation = request.prediction_id
+    ? supabase
+        .from("predictions")
+        .update({
+          predicted_score_a: request.requested_score_a,
+          predicted_score_b: request.requested_score_b,
+          source_file_name: "Solicitacao de revisao aprovada",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", request.prediction_id)
+    : supabase.from("predictions").insert({
+        participant_id: request.participant_id,
+        match_id: request.match_id,
+        predicted_score_a: request.requested_score_a,
+        predicted_score_b: request.requested_score_b,
+        source_file_name: "Solicitacao de revisao aprovada",
+      });
 
-  const { error: predictionError } = await supabase
-    .from("predictions")
-    .update({
-      predicted_score_a: request.requested_score_a,
-      predicted_score_b: request.requested_score_b,
-      source_file_name: "Solicitacao de revisao aprovada",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", request.prediction_id);
+  const { error: predictionError } = await predictionMutation;
 
   if (predictionError) {
     redirect(`/admin/solicitacoes?error=${encodeURIComponent(predictionError.message)}`);

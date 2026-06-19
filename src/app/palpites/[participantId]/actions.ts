@@ -54,16 +54,16 @@ export async function requestPredictionCorrection(formData: FormData) {
     .eq("match_id", match.id)
     .maybeSingle();
 
-  if (predictionError || !prediction) {
-    redirect(`/palpites/${participantId}?error=Palpite%20nao%20encontrado`);
+  if (predictionError) {
+    redirect(`/palpites/${participantId}?error=${encodeURIComponent(predictionError.message)}`);
   }
 
   const { error } = await supabase.from("prediction_correction_requests").insert({
     participant_id: participantId,
-    prediction_id: prediction.id,
+    prediction_id: prediction?.id ?? null,
     match_id: match.id,
-    current_score_a: prediction.predicted_score_a,
-    current_score_b: prediction.predicted_score_b,
+    current_score_a: prediction?.predicted_score_a ?? null,
+    current_score_b: prediction?.predicted_score_b ?? null,
     requested_score_a: requestedScoreA,
     requested_score_b: requestedScoreB,
     requester_name: requesterName || null,

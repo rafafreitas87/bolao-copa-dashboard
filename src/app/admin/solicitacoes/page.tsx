@@ -94,13 +94,20 @@ export default async function AdminCorrectionRequestsPage({
                         <td className="px-5 py-3">{row.teamA} x {row.teamB}</td>
                         <td className="px-5 py-3">
                           {row.currentScoreA === null || row.currentScoreB === null
-                            ? "-"
+                            ? "Em falta"
                             : `${row.currentScoreA} x ${row.currentScoreB}`}
                         </td>
                         <td className="px-5 py-3 font-bold text-emerald-800">
                           {row.requestedScoreA} x {row.requestedScoreB}
                         </td>
-                        <td className="px-5 py-3">{row.requesterName ?? "-"}</td>
+                        <td className="px-5 py-3">
+                          <div>{row.requesterName ?? "-"}</div>
+                          {row.currentScoreA === null || row.currentScoreB === null ? (
+                            <span className="mt-1 inline-block rounded-md bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-800">
+                              Inclusao
+                            </span>
+                          ) : null}
+                        </td>
                         <td className="max-w-56 px-5 py-3 text-slate-600">{row.note ?? "-"}</td>
                         <td className="px-5 py-3">
                           <div className="flex flex-wrap justify-end gap-2">

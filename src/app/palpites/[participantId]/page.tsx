@@ -165,52 +165,50 @@ export default async function PublicParticipantPredictionsPage({
                       </td>
                       {correctionRequestsEnabled ? (
                         <td className="px-5 py-3">
-                          {prediction ? (
-                            <form
-                              action={requestPredictionCorrection}
-                              className="flex min-w-[360px] flex-wrap items-end gap-2"
-                            >
-                              <input type="hidden" name="participantId" value={participant.id} />
-                              <input type="hidden" name="matchNumber" value={fixture.matchNumber} />
-                              <label className="block">
-                                <span className="text-[11px] font-medium text-slate-500">Correto</span>
-                                <div className="mt-1 flex items-center gap-1">
-                                  <input
-                                    name="requestedScoreA"
-                                    type="number"
-                                    min={0}
-                                    required
-                                    defaultValue={prediction.predictedScoreA}
-                                    className="h-8 w-12 rounded-md border border-slate-300 px-2 text-center"
-                                  />
-                                  <span className="text-slate-400">x</span>
-                                  <input
-                                    name="requestedScoreB"
-                                    type="number"
-                                    min={0}
-                                    required
-                                    defaultValue={prediction.predictedScoreB}
-                                    className="h-8 w-12 rounded-md border border-slate-300 px-2 text-center"
-                                  />
-                                </div>
-                              </label>
-                              <input
-                                name="requesterName"
-                                placeholder="Seu nome"
-                                className="h-8 w-28 rounded-md border border-slate-300 px-2 text-xs"
-                              />
-                              <input
-                                name="note"
-                                placeholder="Obs."
-                                className="h-8 w-28 rounded-md border border-slate-300 px-2 text-xs"
-                              />
-                              <button className="h-8 rounded-md bg-amber-600 px-3 text-xs font-bold text-white hover:bg-amber-700">
-                                Solicitar
-                              </button>
-                            </form>
-                          ) : (
-                            <span className="text-xs text-slate-400">Sem palpite</span>
-                          )}
+                          <form
+                            action={requestPredictionCorrection}
+                            className="flex min-w-[360px] flex-wrap items-end gap-2"
+                          >
+                            <input type="hidden" name="participantId" value={participant.id} />
+                            <input type="hidden" name="matchNumber" value={fixture.matchNumber} />
+                            <label className="block">
+                              <span className="text-[11px] font-medium text-slate-500">
+                                {prediction ? "Correto" : "Novo palpite"}
+                              </span>
+                              <div className="mt-1 flex items-center gap-1">
+                                <input
+                                  name="requestedScoreA"
+                                  type="number"
+                                  min={0}
+                                  required
+                                  defaultValue={prediction?.predictedScoreA ?? ""}
+                                  className="h-8 w-12 rounded-md border border-slate-300 px-2 text-center"
+                                />
+                                <span className="text-slate-400">x</span>
+                                <input
+                                  name="requestedScoreB"
+                                  type="number"
+                                  min={0}
+                                  required
+                                  defaultValue={prediction?.predictedScoreB ?? ""}
+                                  className="h-8 w-12 rounded-md border border-slate-300 px-2 text-center"
+                                />
+                              </div>
+                            </label>
+                            <input
+                              name="requesterName"
+                              placeholder="Seu nome"
+                              className="h-8 w-28 rounded-md border border-slate-300 px-2 text-xs"
+                            />
+                            <input
+                              name="note"
+                              placeholder="Obs."
+                              className="h-8 w-28 rounded-md border border-slate-300 px-2 text-xs"
+                            />
+                            <button className="h-8 rounded-md bg-amber-600 px-3 text-xs font-bold text-white hover:bg-amber-700">
+                              Solicitar
+                            </button>
+                          </form>
                         </td>
                       ) : null}
                     </tr>
