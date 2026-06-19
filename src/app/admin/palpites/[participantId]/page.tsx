@@ -14,6 +14,7 @@ import {
   listSupabaseResults,
 } from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
+import { SubmitButton } from "../../submit-button";
 import { saveParticipantPredictions } from "./actions";
 
 type ParticipantPredictionsPageProps = {
@@ -141,9 +142,9 @@ export default async function ParticipantPredictionsPage({
                   Edite os placares do participante e salve a grade completa.
                 </p>
               </div>
-              <button className="h-10 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800">
+              <SubmitButton pendingText="Salvando...">
                 Salvar palpites
-              </button>
+              </SubmitButton>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[980px] text-left text-sm">
@@ -231,9 +232,9 @@ export default async function ParticipantPredictionsPage({
               </table>
             </div>
             <div className="border-t border-slate-200 px-5 py-4">
-              <button className="h-10 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800">
+              <SubmitButton pendingText="Salvando...">
                 Salvar palpites
-              </button>
+              </SubmitButton>
             </div>
           </section>
         </form>

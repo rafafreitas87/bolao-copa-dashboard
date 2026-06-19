@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Save } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/session";
 import { listDevResults } from "@/lib/dev-store";
 import {
@@ -10,6 +9,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { getTeamFlagUrl } from "@/lib/team-flags";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
+import { SubmitButton } from "../submit-button";
 import { applyEspnOfficialResults, saveOfficialResults } from "./actions";
 
 type ResultsPageProps = {
@@ -104,9 +104,12 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
               </p>
             </div>
             <form action={applyEspnOfficialResults}>
-              <button className="h-10 rounded-md bg-slate-950 px-4 text-sm font-medium text-white hover:bg-slate-800">
+              <SubmitButton
+                pendingText="Aplicando..."
+                className="h-10 rounded-md bg-slate-950 px-4 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              >
                 Aplicar resultados ESPN
-              </button>
+              </SubmitButton>
             </form>
           </div>
           <div className="overflow-x-auto">
@@ -172,10 +175,9 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                 Preencha os jogos que terminaram e salve tudo de uma vez.
               </p>
             </div>
-            <button className="inline-flex h-10 items-center gap-2 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800">
-              <Save size={16} aria-hidden="true" />
+            <SubmitButton pendingText="Salvando...">
               Salvar todos
-            </button>
+            </SubmitButton>
           </div>
 
           {Object.entries(grouped).map(([date, rows]) => (
@@ -255,10 +257,9 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
             </section>
           ))}
           <div className="flex justify-end">
-            <button className="inline-flex h-10 items-center gap-2 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800">
-              <Save size={16} aria-hidden="true" />
+            <SubmitButton pendingText="Salvando...">
               Salvar todos
-            </button>
+            </SubmitButton>
           </div>
         </form>
       </div>

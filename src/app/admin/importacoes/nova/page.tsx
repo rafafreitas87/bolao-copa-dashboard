@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { listDevParticipants, listDevUploads } from "@/lib/dev-store";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { SubmitButton } from "../../submit-button";
 import { uploadPredictionFile } from "./actions";
 
 type NewImportPageProps = {
@@ -88,9 +89,9 @@ export default async function NewImportPage({ searchParams }: NewImportPageProps
               />
             </label>
             <div className="flex items-end">
-              <button className="h-10 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800">
+              <SubmitButton pendingText="Enviando...">
                 Enviar
-              </button>
+              </SubmitButton>
             </div>
           </form>
           {participants.length === 0 ? (

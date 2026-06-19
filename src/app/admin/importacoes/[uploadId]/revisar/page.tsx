@@ -14,6 +14,7 @@ import {
   listSupabasePredictionsByUpload,
 } from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
+import { SubmitButton } from "../../../submit-button";
 import { approveDetectedPredictions, saveManualPredictions } from "./actions";
 
 type ReviewImportPageProps = {
@@ -204,9 +205,9 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
             </table>
           </div>
           <div className="border-t border-slate-200 px-5 py-4">
-            <button className="h-10 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800">
+            <SubmitButton pendingText="Salvando palpites...">
               Salvar palpites digitados
-            </button>
+            </SubmitButton>
           </div>
         </form>
       </section>
@@ -289,14 +290,14 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
               </div>
               <form action={approveDetectedPredictions}>
                 <input type="hidden" name="uploadId" value={upload.id} />
-                <button
-                  className="h-10 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                <SubmitButton
+                  pendingText="Aprovando..."
                   disabled={detectedPredictions.length === 0}
                 >
                   {savedPredictions.length > 0
                     ? "Reaprovar palpites"
                     : `Aprovar ${detectedPredictions.length} palpites`}
-                </button>
+                </SubmitButton>
               </form>
             </div>
           </div>
