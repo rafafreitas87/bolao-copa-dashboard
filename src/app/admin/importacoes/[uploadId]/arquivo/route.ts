@@ -30,10 +30,30 @@ export async function GET(_request: Request, { params }: UploadFileRouteProps) {
 
   return new NextResponse(new Uint8Array(bytes), {
     headers: {
-      "Content-Type": upload.fileType === "PDF" ? "application/pdf" : "application/octet-stream",
+      "Content-Type": getContentType(upload.fileType),
       "Content-Disposition": `inline; filename="${encodeURIComponent(upload.fileName)}"`,
     },
   });
+}
+
+function getContentType(fileType: string) {
+  if (fileType === "PDF") {
+    return "application/pdf";
+  }
+
+  if (fileType === "JPG") {
+    return "image/jpeg";
+  }
+
+  if (fileType === "PNG") {
+    return "image/png";
+  }
+
+  if (fileType === "WEBP") {
+    return "image/webp";
+  }
+
+  return "application/octet-stream";
 }
 
 async function getSupabaseUpload(uploadId: string) {

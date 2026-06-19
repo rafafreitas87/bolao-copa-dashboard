@@ -64,7 +64,7 @@ export type Upload = {
   participant_id: string;
   uploaded_by_user_id: string;
   file_name: string;
-  file_type: "PDF" | "XLS" | "XLSX";
+  file_type: "PDF" | "XLS" | "XLSX" | "JPG" | "PNG" | "WEBP";
   storage_path: string;
   file_url: string | null;
   status: "UPLOADED" | "PARSED" | "NEEDS_REVIEW" | "DRAFT" | "CONFIRMED" | "DISCARDED" | "ERROR";

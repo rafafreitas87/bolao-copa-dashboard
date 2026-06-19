@@ -30,7 +30,7 @@ export async function approveDetectedPredictions(formData: FormData) {
   const preview = await parseUploadPreview(upload, bytes);
 
   if (
-    (preview.kind !== "pdf" && preview.kind !== "excel") ||
+    (preview.kind !== "pdf" && preview.kind !== "excel" && preview.kind !== "image") ||
     preview.detectedPredictions.length === 0
   ) {
     redirect(`/admin/importacoes/${uploadId}/revisar?error=Nenhum%20palpite%20detectado`);

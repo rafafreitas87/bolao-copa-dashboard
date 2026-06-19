@@ -89,21 +89,23 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
   }
 
   const detectedPredictions =
-    preview.kind === "pdf" || preview.kind === "excel" ? preview.detectedPredictions : [];
+    preview.kind === "pdf" || preview.kind === "excel" || preview.kind === "image"
+      ? preview.detectedPredictions
+      : [];
   const isScannedPdf =
     preview.kind === "pdf" && detectedPredictions.length === 0 && preview.lines.length === 0;
   const savedPredictionByMatchNumber = new Map(
     savedPredictions.map((prediction) => [prediction.matchNumber, prediction]),
   );
-  const pdfOriginalSection =
-    preview.kind === "pdf" ? (
+  const originalFileSection =
+    preview.kind === "pdf" || preview.kind === "image" ? (
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold">Arquivo original</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Use esta visualizacao para conferir PDFs escaneados ou preenchidos a mao.
+                Use esta visualizacao para conferir arquivos escaneados ou preenchidos a mao.
               </p>
             </div>
             <a
@@ -112,27 +114,37 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
               rel="noreferrer"
               className="h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
             >
-              Abrir PDF
+              Abrir arquivo
             </a>
           </div>
         </div>
-        <iframe
-          src={`/admin/importacoes/${upload.id}/arquivo`}
-          title={`Arquivo ${upload.fileName}`}
-          className="h-[620px] w-full rounded-b-lg bg-slate-100"
-        />
+        {preview.kind === "image" ? (
+          <div className="bg-slate-100 p-4">
+            <img
+              src={`/admin/importacoes/${upload.id}/arquivo`}
+              alt={`Arquivo ${upload.fileName}`}
+              className="mx-auto max-h-[760px] max-w-full rounded-md bg-white object-contain"
+            />
+          </div>
+        ) : (
+          <iframe
+            src={`/admin/importacoes/${upload.id}/arquivo`}
+            title={`Arquivo ${upload.fileName}`}
+            className="h-[620px] w-full rounded-b-lg bg-slate-100"
+          />
+        )}
       </section>
     ) : null;
   const manualPredictionSection =
-    preview.kind === "pdf" ? (
+    preview.kind === "pdf" || preview.kind === "image" ? (
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold">Digitacao manual assistida</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Para PDF escaneado, preencha os placares olhando o arquivo. Campos ja salvos ficam
-                preenchidos.
+                Para arquivo escaneado, confira ou preencha os placares olhando o original.
+                Campos ja salvos ficam preenchidos.
               </p>
             </div>
           </div>
@@ -260,15 +272,19 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
         </div>
       ) : null}
 
-      {preview.kind === "pdf" || preview.kind === "excel" ? (
+      {preview.kind === "pdf" || preview.kind === "excel" || preview.kind === "image" ? (
         <section className="mt-6 rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-5 py-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold">Palpites detectados</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  {detectedPredictions.length} linhas reconhecidas no arquivo.
+                  {detectedPredictions.length} linhas reconhecidas no arquivo
+                  {preview.kind !== "excel" && preview.detectedByVision ? " por OCR/IA." : "."}
                 </p>
+                {preview.kind !== "excel" && preview.ocrMessage ? (
+                  <p className="mt-1 text-sm text-amber-700">{preview.ocrMessage}</p>
+                ) : null}
               </div>
               <form action={approveDetectedPredictions}>
                 <input type="hidden" name="uploadId" value={upload.id} />
@@ -325,46 +341,48 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
         </section>
       ) : null}
 
-      {preview.kind === "pdf" ? (
+      {preview.kind === "pdf" || preview.kind === "image" ? (
         <div className="mt-6 space-y-6">
-          {isScannedPdf ? (
+          {isScannedPdf || (preview.kind === "image" && detectedPredictions.length === 0) ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-              Este PDF parece ser escaneado ou preenchido a mao. O sistema nao consegue ler os
-              placares automaticamente nesse formato, entao use a digitacao manual abaixo.
+              Este arquivo parece ser escaneado ou preenchido a mao. Se o OCR/IA nao detectar tudo,
+              use a digitacao manual abaixo para completar.
             </div>
           ) : null}
-          {isScannedPdf ? manualPredictionSection : pdfOriginalSection}
-          {isScannedPdf ? pdfOriginalSection : manualPredictionSection}
+          {isScannedPdf ? manualPredictionSection : originalFileSection}
+          {isScannedPdf ? originalFileSection : manualPredictionSection}
 
-          <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-5 py-4">
-              <h2 className="text-lg font-semibold">Texto extraido do PDF</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                {preview.errorMessage
-                  ? `Erro na extracao: ${preview.errorMessage}`
-                  : preview.lines.length > 0
-                    ? "Linhas encontradas para revisao."
-                    : "Nao foi encontrado texto extraivel. Pode ser um PDF escaneado."}
-              </p>
-            </div>
-          <div className="max-h-[520px] overflow-auto p-5">
-            {preview.lines.length > 0 ? (
-              <ol className="space-y-2 text-sm">
-                {preview.lines.map((line, index) => (
-                  <li key={`${index}-${line}`} className="grid grid-cols-[48px_1fr] gap-3">
-                    <span className="text-right text-slate-400">{index + 1}</span>
-                    <span className="rounded-md bg-slate-50 px-3 py-2">{line}</span>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <div className="rounded-md bg-amber-50 p-4 text-sm text-amber-900">
-                Este PDF parece nao ter texto pesquisavel. Vamos precisar de OCR ou digitacao manual
-                assistida na proxima etapa.
+          {preview.kind === "pdf" ? (
+            <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 px-5 py-4">
+                <h2 className="text-lg font-semibold">Texto extraido do PDF</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  {preview.errorMessage
+                    ? `Erro na extracao: ${preview.errorMessage}`
+                    : preview.lines.length > 0
+                      ? "Linhas encontradas para revisao."
+                      : "Nao foi encontrado texto extraivel. Pode ser um PDF escaneado."}
+                </p>
               </div>
-            )}
-          </div>
-          </section>
+              <div className="max-h-[520px] overflow-auto p-5">
+                {preview.lines.length > 0 ? (
+                  <ol className="space-y-2 text-sm">
+                    {preview.lines.map((line, index) => (
+                      <li key={`${index}-${line}`} className="grid grid-cols-[48px_1fr] gap-3">
+                        <span className="text-right text-slate-400">{index + 1}</span>
+                        <span className="rounded-md bg-slate-50 px-3 py-2">{line}</span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div className="rounded-md bg-amber-50 p-4 text-sm text-amber-900">
+                    Este PDF parece nao ter texto pesquisavel. O OCR/IA tenta ler a imagem do
+                    arquivo; se algo ficar faltando, complete na digitacao manual.
+                  </div>
+                )}
+              </div>
+            </section>
+          ) : null}
         </div>
       ) : null}
 

@@ -6,7 +6,7 @@ import { createDevUpload } from "@/lib/dev-store";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 
-const allowedTypes = new Set(["pdf", "xls", "xlsx"]);
+const allowedTypes = new Set(["pdf", "xls", "xlsx", "jpg", "jpeg", "png", "webp"]);
 
 export async function uploadPredictionFile(formData: FormData) {
   const profile = await requireAdmin();
@@ -20,7 +20,7 @@ export async function uploadPredictionFile(formData: FormData) {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
 
   if (!allowedTypes.has(extension)) {
-    redirect("/admin/importacoes/nova?error=Use%20PDF,%20XLS%20ou%20XLSX");
+    redirect("/admin/importacoes/nova?error=Use%20PDF,%20XLS,%20XLSX,%20JPG,%20PNG%20ou%20WEBP");
   }
 
   if (!hasSupabaseEnv()) {
@@ -63,7 +63,7 @@ export async function uploadPredictionFile(formData: FormData) {
       participant_id: participantId,
       uploaded_by_user_id: profile.id,
       file_name: file.name,
-      file_type: extension.toUpperCase() as "PDF" | "XLS" | "XLSX",
+      file_type: normalizeUploadFileType(extension),
       storage_path: storagePath,
       status: "UPLOADED",
     })
@@ -75,4 +75,14 @@ export async function uploadPredictionFile(formData: FormData) {
   }
 
   redirect(`/admin/importacoes/${upload.id}/revisar`);
+}
+
+function normalizeUploadFileType(extension: string) {
+  return (extension === "jpeg" ? "JPG" : extension.toUpperCase()) as
+    | "PDF"
+    | "XLS"
+    | "XLSX"
+    | "JPG"
+    | "PNG"
+    | "WEBP";
 }

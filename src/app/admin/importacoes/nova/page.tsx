@@ -30,7 +30,7 @@ export default async function NewImportPage({ searchParams }: NewImportPageProps
             <p className="text-sm font-medium uppercase tracking-wide text-emerald-700">
               Importacoes
             </p>
-            <h1 className="text-3xl font-semibold">Upload de PDF, XLS ou XLSX</h1>
+            <h1 className="text-3xl font-semibold">Upload de PDF, planilha ou foto</h1>
           </div>
           <Link
             href="/admin"
@@ -82,7 +82,7 @@ export default async function NewImportPage({ searchParams }: NewImportPageProps
               <input
                 name="file"
                 type="file"
-                accept=".pdf,.xls,.xlsx,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                accept=".pdf,.xls,.xlsx,.jpg,.jpeg,.png,.webp,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/jpeg,image/png,image/webp"
                 required
                 className="mt-1 block h-10 w-full rounded-md border border-slate-300 bg-white text-sm file:mr-3 file:h-10 file:border-0 file:bg-slate-100 file:px-3 file:text-sm file:font-medium"
               />

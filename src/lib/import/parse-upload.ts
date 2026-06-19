@@ -1,5 +1,6 @@
 import { read, utils } from "xlsx";
 import type { DevUpload } from "@/lib/dev-store";
+import { extractPredictionsWithVision } from "./vision-ocr";
 
 type PdfParse = (bytes: Buffer) => Promise<{ text: string }>;
 
@@ -18,6 +19,15 @@ export type ParsedUploadPreview =
       lines: string[];
       detectedPredictions: DetectedPdfPrediction[];
       errorMessage?: string;
+      ocrMessage?: string;
+      detectedByVision: boolean;
+    }
+  | {
+      kind: "image";
+      detectedPredictions: DetectedPdfPrediction[];
+      errorMessage?: string;
+      ocrMessage?: string;
+      detectedByVision: boolean;
     }
   | {
       kind: "unsupported";
@@ -68,6 +78,20 @@ export async function parseUploadPreview(upload: DevUpload, bytes: Buffer): Prom
       errorMessage = error instanceof Error ? error.message : "Nao foi possivel extrair texto.";
     }
 
+    let detectedPredictions = detectPdfPredictions(text);
+    let ocrMessage: string | undefined;
+    let detectedByVision = false;
+
+    if (detectedPredictions.length === 0) {
+      const vision = await extractPredictionsWithVision({
+        fileName: upload.fileName,
+        bytes,
+      });
+      detectedPredictions = vision.predictions;
+      ocrMessage = vision.message;
+      detectedByVision = vision.predictions.length > 0;
+    }
+
     return {
       kind: "pdf",
       text,
@@ -76,14 +100,30 @@ export async function parseUploadPreview(upload: DevUpload, bytes: Buffer): Prom
         .map((line) => line.trim())
         .filter(Boolean)
         .slice(0, 120),
-      detectedPredictions: detectPdfPredictions(text),
+      detectedPredictions,
       errorMessage,
+      ocrMessage,
+      detectedByVision,
+    };
+  }
+
+  if (extension && ["jpg", "jpeg", "png", "webp"].includes(extension)) {
+    const vision = await extractPredictionsWithVision({
+      fileName: upload.fileName,
+      bytes,
+    });
+
+    return {
+      kind: "image",
+      detectedPredictions: vision.predictions,
+      ocrMessage: vision.message,
+      detectedByVision: vision.predictions.length > 0,
     };
   }
 
   return {
     kind: "unsupported",
-    message: "Formato nao suportado. Use PDF, XLS ou XLSX.",
+    message: "Formato nao suportado. Use PDF, XLS, XLSX, JPG, PNG ou WEBP.",
   };
 }
 
