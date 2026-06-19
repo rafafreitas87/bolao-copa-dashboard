@@ -13,10 +13,21 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { saveSupabasePredictionsForParticipant } from "@/lib/supabase/read-model";
 import { getGroupStageFixtures } from "@/lib/world-cup-fixtures";
 
+type ApprovalUpload = {
+  id: string;
+  participantId: string;
+  fileName: string;
+  fileType: string;
+  storagePath: string;
+  uploadedAt: string;
+  status: "UPLOADED";
+};
+
 export async function approveDetectedPredictions(formData: FormData) {
   await requireAdmin();
 
   const uploadId = String(formData.get("uploadId") ?? "");
+  const detectedPredictionsFromForm = parseDetectedPredictionsFromForm(formData);
 
   const upload = hasSupabaseEnv() ? await getSupabaseUpload(uploadId) : await getDevUpload(uploadId);
 
@@ -24,15 +35,12 @@ export async function approveDetectedPredictions(formData: FormData) {
     redirect("/admin/importacoes/nova?error=Upload%20nao%20encontrado");
   }
 
-  const bytes = hasSupabaseEnv()
-    ? await readSupabaseUploadBytes(upload.storagePath)
-    : await readDevUploadBytes(upload);
-  const preview = await parseUploadPreview(upload, bytes);
+  const detectedPredictions =
+    detectedPredictionsFromForm.length > 0
+      ? detectedPredictionsFromForm
+      : await parseDetectedPredictionsFromUpload(upload);
 
-  if (
-    (preview.kind !== "pdf" && preview.kind !== "excel" && preview.kind !== "image") ||
-    preview.detectedPredictions.length === 0
-  ) {
+  if (detectedPredictions.length === 0) {
     redirect(`/admin/importacoes/${uploadId}/revisar?error=Nenhum%20palpite%20detectado`);
   }
 
@@ -40,7 +48,7 @@ export async function approveDetectedPredictions(formData: FormData) {
     try {
       await saveSupabasePredictionsForUpload({
         upload,
-        predictions: preview.detectedPredictions,
+        predictions: detectedPredictions,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao aprovar palpites";
@@ -50,11 +58,89 @@ export async function approveDetectedPredictions(formData: FormData) {
     await saveDevPredictionsForUpload({
       upload,
       participantId: upload.participantId,
-      predictions: preview.detectedPredictions,
+      predictions: detectedPredictions,
     });
   }
 
   redirect(`/admin/importacoes/${uploadId}/revisar?approved=1`);
+}
+
+function parseDetectedPredictionsFromForm(formData: FormData) {
+  const raw = String(formData.get("detectedPredictionsJson") ?? "");
+
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const rows = JSON.parse(raw) as unknown;
+
+    if (!Array.isArray(rows)) {
+      return [];
+    }
+
+    return rows
+      .map((row) => {
+        if (!row || typeof row !== "object") {
+          return null;
+        }
+
+        const value = row as Record<string, unknown>;
+        const matchNumber = toInteger(value.matchNumber);
+        const predictedScoreA = toInteger(value.predictedScoreA);
+        const predictedScoreB = toInteger(value.predictedScoreB);
+        const teamA = toText(value.teamA);
+        const teamB = toText(value.teamB);
+
+        if (
+          !matchNumber ||
+          matchNumber < 1 ||
+          matchNumber > 72 ||
+          predictedScoreA === null ||
+          predictedScoreB === null ||
+          !teamA ||
+          !teamB
+        ) {
+          return null;
+        }
+
+        return {
+          matchNumber,
+          teamA,
+          teamB,
+          predictedScoreA,
+          predictedScoreB,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
+  } catch {
+    return [];
+  }
+}
+
+async function parseDetectedPredictionsFromUpload(upload: ApprovalUpload) {
+  const bytes = hasSupabaseEnv()
+    ? await readSupabaseUploadBytes(upload.storagePath)
+    : await readDevUploadBytes(upload);
+  const preview = await parseUploadPreview(upload, bytes);
+
+  if (preview.kind !== "pdf" && preview.kind !== "excel" && preview.kind !== "image") {
+    return [];
+  }
+
+  return preview.detectedPredictions;
+}
+
+function toInteger(value: unknown) {
+  const number = typeof value === "number" ? value : Number(String(value ?? "").trim());
+
+  return Number.isInteger(number) && number >= 0 ? number : null;
+}
+
+function toText(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 export async function saveManualPredictions(formData: FormData) {

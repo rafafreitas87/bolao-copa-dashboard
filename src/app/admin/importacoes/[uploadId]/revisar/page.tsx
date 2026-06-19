@@ -290,6 +290,11 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
               </div>
               <form action={approveDetectedPredictions}>
                 <input type="hidden" name="uploadId" value={upload.id} />
+                <input
+                  type="hidden"
+                  name="detectedPredictionsJson"
+                  value={JSON.stringify(detectedPredictions)}
+                />
                 <SubmitButton
                   pendingText="Aprovando..."
                   disabled={detectedPredictions.length === 0}
