@@ -62,7 +62,9 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
     const bytes = hasSupabaseEnv()
       ? await readSupabaseUploadBytes(upload.storagePath)
       : await readDevUploadBytes(upload);
-    preview = await parseUploadPreview(upload, bytes);
+    preview = await parseUploadPreview(upload, bytes, {
+      skipVision: savedPredictions.length > 0 || Boolean(search.approved),
+    });
   } catch (error) {
     previewError =
       error instanceof Error
@@ -90,10 +92,20 @@ export default async function ReviewImportPage({ params, searchParams }: ReviewI
     );
   }
 
+  const savedPredictionsAsDetected = savedPredictions.map((prediction) => ({
+    matchNumber: prediction.matchNumber,
+    dateLabel: "",
+    teamA: prediction.teamA,
+    predictedScoreA: prediction.predictedScoreA,
+    predictedScoreB: prediction.predictedScoreB,
+    teamB: prediction.teamB,
+  }));
   const detectedPredictions =
-    preview.kind === "pdf" || preview.kind === "excel" || preview.kind === "image"
-      ? preview.detectedPredictions
-      : [];
+    savedPredictionsAsDetected.length > 0
+      ? savedPredictionsAsDetected
+      : preview.kind === "pdf" || preview.kind === "excel" || preview.kind === "image"
+        ? preview.detectedPredictions
+        : [];
   const isScannedPdf =
     preview.kind === "pdf" && detectedPredictions.length === 0 && preview.lines.length === 0;
   const savedPredictionByMatchNumber = new Map(

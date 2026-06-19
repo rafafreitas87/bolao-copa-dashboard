@@ -44,7 +44,11 @@ export type DetectedPdfPrediction = {
   teamB: string;
 };
 
-export async function parseUploadPreview(upload: DevUpload, bytes: Buffer): Promise<ParsedUploadPreview> {
+export async function parseUploadPreview(
+  upload: DevUpload,
+  bytes: Buffer,
+  options: { skipVision?: boolean } = {},
+): Promise<ParsedUploadPreview> {
   const extension = upload.fileName.split(".").pop()?.toLowerCase();
 
   if (extension === "xls" || extension === "xlsx") {
@@ -84,7 +88,9 @@ export async function parseUploadPreview(upload: DevUpload, bytes: Buffer): Prom
     let detectedByVision = false;
 
     if (detectedPredictions.length === 0) {
-      if (bytes.length > maxAutomaticVisionBytes) {
+      if (options.skipVision) {
+        ocrMessage = "OCR/IA ignorado porque este upload ja tem palpites salvos.";
+      } else if (bytes.length > maxAutomaticVisionBytes) {
         ocrMessage =
           "Arquivo grande para OCR automatico. A revisao manual foi aberta para evitar queda da pagina.";
       } else {
@@ -115,7 +121,12 @@ export async function parseUploadPreview(upload: DevUpload, bytes: Buffer): Prom
 
   if (extension && ["jpg", "jpeg", "png", "webp"].includes(extension)) {
     const vision =
-      bytes.length > maxAutomaticVisionBytes
+      options.skipVision
+        ? {
+            predictions: [],
+            message: "OCR/IA ignorado porque este upload ja tem palpites salvos.",
+          }
+        : bytes.length > maxAutomaticVisionBytes
         ? {
             predictions: [],
             message:
