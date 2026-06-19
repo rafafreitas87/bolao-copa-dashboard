@@ -27,6 +27,7 @@ type ReviewImportPageProps = {
 };
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export default async function ReviewImportPage({ params, searchParams }: ReviewImportPageProps) {
   await requireAdmin();

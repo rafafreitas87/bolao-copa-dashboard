@@ -3,6 +3,7 @@ import type { DevUpload } from "@/lib/dev-store";
 import { extractPredictionsWithVision } from "./vision-ocr";
 
 type PdfParse = (bytes: Buffer) => Promise<{ text: string }>;
+const maxAutomaticVisionBytes = Number(process.env.OPENAI_OCR_MAX_BYTES ?? 6_000_000);
 
 export type ParsedUploadPreview =
   | {
@@ -83,13 +84,18 @@ export async function parseUploadPreview(upload: DevUpload, bytes: Buffer): Prom
     let detectedByVision = false;
 
     if (detectedPredictions.length === 0) {
-      const vision = await extractPredictionsWithVision({
-        fileName: upload.fileName,
-        bytes,
-      });
-      detectedPredictions = vision.predictions;
-      ocrMessage = vision.message;
-      detectedByVision = vision.predictions.length > 0;
+      if (bytes.length > maxAutomaticVisionBytes) {
+        ocrMessage =
+          "Arquivo grande para OCR automatico. A revisao manual foi aberta para evitar queda da pagina.";
+      } else {
+        const vision = await extractPredictionsWithVision({
+          fileName: upload.fileName,
+          bytes,
+        });
+        detectedPredictions = vision.predictions;
+        ocrMessage = vision.message;
+        detectedByVision = vision.predictions.length > 0;
+      }
     }
 
     return {
@@ -108,10 +114,17 @@ export async function parseUploadPreview(upload: DevUpload, bytes: Buffer): Prom
   }
 
   if (extension && ["jpg", "jpeg", "png", "webp"].includes(extension)) {
-    const vision = await extractPredictionsWithVision({
-      fileName: upload.fileName,
-      bytes,
-    });
+    const vision =
+      bytes.length > maxAutomaticVisionBytes
+        ? {
+            predictions: [],
+            message:
+              "Imagem grande para OCR automatico. Reduza o arquivo ou use digitacao manual.",
+          }
+        : await extractPredictionsWithVision({
+            fileName: upload.fileName,
+            bytes,
+          });
 
     return {
       kind: "image",
