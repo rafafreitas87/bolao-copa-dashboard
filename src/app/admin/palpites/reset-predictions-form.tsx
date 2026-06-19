@@ -1,6 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
+import { SubmitButton } from "../submit-button";
 import { resetAllPredictions } from "./actions";
 
 export function ResetPredictionsForm() {
@@ -16,9 +17,12 @@ export function ResetPredictionsForm() {
 
   return (
     <form action={resetAllPredictions} onSubmit={handleSubmit}>
-      <button className="h-10 rounded-md bg-red-700 px-4 text-sm font-medium text-white hover:bg-red-800">
+      <SubmitButton
+        pendingText="Resetando..."
+        className="h-10 rounded-md bg-red-700 px-4 text-sm font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:bg-red-300"
+      >
         Resetar todos
-      </button>
+      </SubmitButton>
     </form>
   );
 }

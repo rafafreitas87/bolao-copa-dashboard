@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { listDevParticipants } from "@/lib/dev-store";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { LoadingLink } from "../loading-link";
+import { SubmitButton } from "../submit-button";
 import { createParticipant } from "./actions";
 
 type ParticipantsPageProps = {
@@ -29,12 +30,13 @@ export default async function ParticipantsPage({ searchParams }: ParticipantsPag
             </p>
             <h1 className="text-3xl font-semibold">Criar e listar participantes</h1>
           </div>
-          <Link
+          <LoadingLink
             href="/admin"
+            loadingText="Voltando..."
             className="h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
           >
             Voltar
-          </Link>
+          </LoadingLink>
         </header>
 
         {params.created ? (
@@ -75,9 +77,12 @@ export default async function ParticipantsPage({ searchParams }: ParticipantsPag
               />
             </label>
             <div className="flex items-end">
-              <button className="h-10 w-full rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800">
+              <SubmitButton
+                pendingText="Criando..."
+                className="h-10 w-full rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
                 Criar
-              </button>
+              </SubmitButton>
             </div>
           </form>
         </section>

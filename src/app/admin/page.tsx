@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   CalendarDays,
   ClipboardCheck,
@@ -10,6 +9,7 @@ import {
 } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { LoadingLink } from "./loading-link";
 
 export default async function AdminPage() {
   const profile = await requireAdmin();
@@ -36,17 +36,19 @@ export default async function AdminPage() {
               Logado como {profile.email}
             </p>
           </div>
-          <Link
+          <LoadingLink
             href="/dashboard"
+            loadingText="Abrindo..."
             className="h-10 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
           >
             Voltar
-          </Link>
+          </LoadingLink>
         </header>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <Link
+          <LoadingLink
             href="/admin/participantes"
+            loadingText="Abrindo participantes..."
             className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-300 hover:shadow-md"
           >
             <Users className="mb-4 text-emerald-700" size={24} aria-hidden="true" />
@@ -54,9 +56,10 @@ export default async function AdminPage() {
             <p className="mt-2 text-sm text-slate-600">
               Criar, listar e preparar participantes para importacao.
             </p>
-          </Link>
-          <Link
+          </LoadingLink>
+          <LoadingLink
             href="/admin/importacoes/nova"
+            loadingText="Abrindo importacao..."
             className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-300 hover:shadow-md"
           >
             <FileUp className="mb-4 text-emerald-700" size={24} aria-hidden="true" />
@@ -64,9 +67,10 @@ export default async function AdminPage() {
             <p className="mt-2 text-sm text-slate-600">
               Enviar PDF, XLS ou XLSX associado a um participante.
             </p>
-          </Link>
-          <Link
+          </LoadingLink>
+          <LoadingLink
             href="/admin/resultados"
+            loadingText="Abrindo resultados..."
             className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-300 hover:shadow-md"
           >
             <ListChecks className="mb-4 text-emerald-700" size={24} aria-hidden="true" />
@@ -74,9 +78,10 @@ export default async function AdminPage() {
             <p className="mt-2 text-sm text-slate-600">
               Ver partidas da fase de grupos e informar placares oficiais.
             </p>
-          </Link>
-          <Link
+          </LoadingLink>
+          <LoadingLink
             href="/admin/palpites"
+            loadingText="Abrindo palpites..."
             className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-300 hover:shadow-md"
           >
             <ClipboardCheck className="mb-4 text-emerald-700" size={24} aria-hidden="true" />
@@ -84,7 +89,7 @@ export default async function AdminPage() {
             <p className="mt-2 text-sm text-slate-600">
               Conferir palpites aprovados, arquivo de origem e pontuacao por jogo.
             </p>
-          </Link>
+          </LoadingLink>
           <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <Shield className="mb-4 text-emerald-700" size={24} aria-hidden="true" />
             <h2 className="font-semibold">Roles</h2>
